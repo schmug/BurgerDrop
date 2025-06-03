@@ -315,6 +315,67 @@
         let flashColor = '#FFFFFF';
         let flashDuration = 0;
         
+        // Dynamic color system
+        let colorTheme = {
+            primary: '#FFD700',
+            secondary: '#FF6347',
+            accent: '#00FF88',
+            warning: '#FF4444',
+            hue: 0
+        };
+        
+        // Custom easing functions
+        const easing = {
+            linear: t => t,
+            easeInQuad: t => t * t,
+            easeOutQuad: t => t * (2 - t),
+            easeInOutQuad: t => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
+            easeInCubic: t => t * t * t,
+            easeOutCubic: t => (--t) * t * t + 1,
+            easeInOutCubic: t => t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1,
+            easeInElastic: t => {
+                if (t === 0 || t === 1) return t;
+                const p = 0.3;
+                const s = p / 4;
+                return -(Math.pow(2, 10 * (t -= 1)) * Math.sin((t - s) * (2 * Math.PI) / p));
+            },
+            easeOutElastic: t => {
+                if (t === 0 || t === 1) return t;
+                const p = 0.3;
+                const s = p / 4;
+                return Math.pow(2, -10 * t) * Math.sin((t - s) * (2 * Math.PI) / p) + 1;
+            },
+            easeInBounce: t => 1 - easing.easeOutBounce(1 - t),
+            easeOutBounce: t => {
+                if (t < 1 / 2.75) {
+                    return 7.5625 * t * t;
+                } else if (t < 2 / 2.75) {
+                    return 7.5625 * (t -= 1.5 / 2.75) * t + 0.75;
+                } else if (t < 2.5 / 2.75) {
+                    return 7.5625 * (t -= 2.25 / 2.75) * t + 0.9375;
+                } else {
+                    return 7.5625 * (t -= 2.625 / 2.75) * t + 0.984375;
+                }
+            }
+        };
+        
+        function updateColorTheme() {
+            // Base hue changes based on combo level
+            const targetHue = Math.min((combo - 1) * 30, 300); // Max 300 degrees for rainbow effect
+            colorTheme.hue += (targetHue - colorTheme.hue) * 0.1; // Smooth transition
+            
+            // Score-based saturation and brightness
+            const scoreFactor = Math.min(score / 1000, 1); // Normalize to 0-1
+            const saturation = 50 + (scoreFactor * 50); // 50-100%
+            const lightness = 45 + (Math.sin(frameCount * 0.05) * 10); // Subtle pulsing 35-55%
+            
+            // Update theme colors
+            colorTheme.primary = `hsl(${colorTheme.hue + 45}, ${saturation}%, ${lightness + 15}%)`;
+            colorTheme.secondary = `hsl(${colorTheme.hue + 15}, ${saturation}%, ${lightness}%)`;
+            colorTheme.accent = `hsl(${colorTheme.hue + 120}, ${saturation}%, ${lightness}%)`;
+            colorTheme.warning = `hsl(${0}, ${saturation + 20}%, ${lightness}%)`;
+        }
+        
         // Try to load high score from localStorage (won't work in sandbox)
         try {
             highScore = localStorage.getItem('highScore') || 0;
@@ -323,18 +384,78 @@
             highScore = 0;
         }
 
-        // Ingredient types with emojis
+        // Enhanced ingredient types with multiple emoji variations
         const ingredientTypes = {
-            bun_top: { emoji: '🍞', name: 'Top Bun', size: 40 },
-            bun_bottom: { emoji: '🥖', name: 'Bottom Bun', size: 40 },
-            patty: { emoji: '🥩', name: 'Patty', size: 45 },
-            cheese: { emoji: '🧀', name: 'Cheese', size: 35 },
-            lettuce: { emoji: '🥬', name: 'Lettuce', size: 35 },
-            tomato: { emoji: '🍅', name: 'Tomato', size: 35 },
-            pickle: { emoji: '🥒', name: 'Pickle', size: 30 },
-            bacon: { emoji: '🥓', name: 'Bacon', size: 35 },
-            onion: { emoji: '🧅', name: 'Onion', size: 30 },
-            egg: { emoji: '🍳', name: 'Egg', size: 40 }
+            bun_top: { 
+                emoji: '🍞', 
+                variants: ['🍞', '🥖'], 
+                name: 'Top Bun', 
+                size: 40,
+                color: '#D2B48C'
+            },
+            bun_bottom: { 
+                emoji: '🥖', 
+                variants: ['🥖', '🍞'], 
+                name: 'Bottom Bun', 
+                size: 40,
+                color: '#DEB887'
+            },
+            patty: { 
+                emoji: '🥩', 
+                variants: ['🥩', '🍖'], 
+                name: 'Patty', 
+                size: 45,
+                color: '#8B4513'
+            },
+            cheese: { 
+                emoji: '🧀', 
+                variants: ['🧀', '🟨'], 
+                name: 'Cheese', 
+                size: 35,
+                color: '#FFD700'
+            },
+            lettuce: { 
+                emoji: '🥬', 
+                variants: ['🥬', '🍃'], 
+                name: 'Lettuce', 
+                size: 35,
+                color: '#90EE90'
+            },
+            tomato: { 
+                emoji: '🍅', 
+                variants: ['🍅', '🔴'], 
+                name: 'Tomato', 
+                size: 35,
+                color: '#FF6347'
+            },
+            pickle: { 
+                emoji: '🥒', 
+                variants: ['🥒', '🟢'], 
+                name: 'Pickle', 
+                size: 30,
+                color: '#9ACD32'
+            },
+            bacon: { 
+                emoji: '🥓', 
+                variants: ['🥓', '🔥'], 
+                name: 'Bacon', 
+                size: 35,
+                color: '#DC143C'
+            },
+            onion: { 
+                emoji: '🧅', 
+                variants: ['🧅', '⚪'], 
+                name: 'Onion', 
+                size: 30,
+                color: '#F5F5DC'
+            },
+            egg: { 
+                emoji: '🍳', 
+                variants: ['🍳', '🟡'], 
+                name: 'Egg', 
+                size: 40,
+                color: '#FFFFE0'
+            }
         };
 
         // Order templates
@@ -357,28 +478,119 @@
                 this.rotation = Math.random() * Math.PI * 2;
                 this.rotationSpeed = (Math.random() - 0.5) * 0.1;
                 this.collected = false;
+                this.startY = this.y;
+                this.fallProgress = 0;
+                this.sway = Math.random() * 2 - 1; // -1 to 1 for horizontal sway
+                
+                // Trail system
+                this.trail = [];
+                this.maxTrailLength = 8;
+                this.trailUpdateInterval = 3;
+                this.trailCounter = 0;
             }
 
             update() {
-                this.y += this.speed;
-                this.rotation += this.rotationSpeed;
+                // Smooth falling motion with easing
+                this.fallProgress += 0.02;
+                const fallEase = easing.easeInQuad(Math.min(this.fallProgress, 1));
+                this.y += this.speed * (0.5 + fallEase * 0.5);
+                
+                // Add subtle horizontal sway
+                const swayAmount = Math.sin(frameCount * 0.05 + this.sway * Math.PI) * 0.5;
+                this.x += swayAmount;
+                
+                // Smooth rotation with easing
+                this.rotation += this.rotationSpeed * (1 + fallEase * 0.5);
+                
+                // Update trail
+                this.trailCounter++;
+                if (this.trailCounter >= this.trailUpdateInterval) {
+                    this.trail.push({
+                        x: this.x + this.data.size / 2,
+                        y: this.y + this.data.size / 2,
+                        alpha: 1,
+                        size: this.data.size * 0.8
+                    });
+                    
+                    if (this.trail.length > this.maxTrailLength) {
+                        this.trail.shift();
+                    }
+                    
+                    this.trailCounter = 0;
+                }
+                
+                // Update trail alpha with easing
+                this.trail.forEach((point, index) => {
+                    const trailProgress = (index + 1) / this.trail.length;
+                    point.alpha = easing.easeOutCubic(trailProgress) * 0.6;
+                    point.size *= 0.98;
+                });
             }
 
             draw() {
+                // Draw trail first (behind ingredient)
+                this.drawTrail();
+                
                 ctx.save();
                 ctx.translate(this.x + this.data.size / 2, this.y + this.data.size / 2);
                 ctx.rotate(this.rotation);
                 
-                // Add shadow to ingredients
-                ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-                ctx.shadowBlur = 4;
-                ctx.shadowOffsetX = 2;
-                ctx.shadowOffsetY = 2;
+                // Add enhanced shadow to ingredients
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+                ctx.shadowBlur = 6;
+                ctx.shadowOffsetX = 3;
+                ctx.shadowOffsetY = 3;
+                
+                // Use enhanced emoji with occasional variants
+                const useVariant = frameCount % 120 < 10; // Show variant for 10 frames every 2 seconds
+                const emojiToUse = useVariant && this.data.variants ? 
+                    this.data.variants[Math.floor(frameCount / 30) % this.data.variants.length] : 
+                    this.data.emoji;
                 
                 ctx.font = `${this.data.size}px Arial`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(this.data.emoji, 0, 0);
+                ctx.fillText(emojiToUse, 0, 0);
+                ctx.restore();
+            }
+            
+            drawTrail() {
+                if (this.trail.length < 2) return;
+                
+                ctx.save();
+                
+                // Create gradient trail effect
+                for (let i = 0; i < this.trail.length; i++) {
+                    const point = this.trail[i];
+                    const nextPoint = this.trail[i + 1];
+                    
+                    if (nextPoint) {
+                        // Draw line segment with gradient
+                        const gradient = ctx.createLinearGradient(
+                            point.x, point.y, nextPoint.x, nextPoint.y
+                        );
+                        gradient.addColorStop(0, `rgba(255, 255, 255, ${point.alpha * 0.3})`);
+                        gradient.addColorStop(1, `rgba(255, 255, 255, ${nextPoint.alpha * 0.3})`);
+                        
+                        ctx.strokeStyle = gradient;
+                        ctx.lineWidth = Math.max(point.size * 0.15, 1);
+                        ctx.lineCap = 'round';
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(point.x, point.y);
+                        ctx.lineTo(nextPoint.x, nextPoint.y);
+                        ctx.stroke();
+                    }
+                    
+                    // Draw trail point
+                    ctx.globalAlpha = point.alpha * 0.4;
+                    ctx.fillStyle = colorTheme.accent + '80'; // Add transparency
+                    
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, Math.max(point.size * 0.1, 2), 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
                 ctx.restore();
             }
 
@@ -472,9 +684,20 @@
                         ctx.fillRect(this.x + 5, yPos - 15, this.width - 10, 25);
                     }
                     
+                    // Enhanced order ingredient display
                     ctx.font = '20px Arial';
                     ctx.textAlign = 'center';
-                    ctx.fillText(ingredient.emoji, this.x + this.width / 2, yPos);
+                    
+                    // Add subtle glow for current ingredient
+                    if (i === this.currentIndex) {
+                        ctx.shadowColor = colorTheme.primary;
+                        ctx.shadowBlur = 8;
+                        ctx.fillText(ingredient.emoji, this.x + this.width / 2, yPos);
+                        ctx.shadowColor = 'transparent';
+                        ctx.shadowBlur = 0;
+                    } else {
+                        ctx.fillText(ingredient.emoji, this.x + this.width / 2, yPos);
+                    }
                     ctx.restore();
                 }
             }
@@ -510,24 +733,32 @@
                 this.gravity = 0.15;
                 this.bounce = 0.7;
                 this.scale = 1;
+                this.startTime = frameCount;
+                this.duration = 60 + Math.random() * 60; // 1-2 seconds at 60fps
             }
 
             update() {
+                const elapsed = frameCount - this.startTime;
+                const progress = Math.min(elapsed / this.duration, 1);
+                
                 this.x += this.vx;
                 this.y += this.vy;
                 this.vy += this.gravity;
                 this.rotation += this.rotationSpeed;
-                this.life -= this.decay;
                 
-                // Bounce off ground
+                // Use custom easing for life decay
+                this.life = 1 - easing.easeOutQuad(progress);
+                
+                // Bounce off ground with easing
                 if (this.y > canvas.height - 10 && this.vy > 0) {
                     this.vy *= -this.bounce;
                     this.vx *= 0.8;
                 }
                 
-                // Scale animation for celebration particles
+                // Enhanced scale animation for celebration particles
                 if (this.type === 'celebration') {
-                    this.scale = 0.5 + Math.sin(frameCount * 0.1 + this.x) * 0.3;
+                    const pulseProgress = (frameCount * 0.1 + this.x) % (Math.PI * 2);
+                    this.scale = 0.7 + easing.easeInOutCubic(Math.sin(pulseProgress) * 0.5 + 0.5) * 0.6;
                 }
             }
 
@@ -721,11 +952,11 @@
                             // Subtle green flash for correct ingredient
                             startScreenFlash('#00FF88', 0.15, 6);
                             
-                            // Create particles
+                            // Create particles with dynamic colors
                             for (let j = 0; j < 10; j++) {
                                 particles.push(new Particle(ingredient.x + ingredient.data.size / 2, 
                                                            ingredient.y + ingredient.data.size / 2, 
-                                                           '#FFD700'));
+                                                           colorTheme.accent));
                             }
                             break;
                         } else if (result === 'completed') {
@@ -735,11 +966,11 @@
                             score += baseScore * combo;
                             
                             createFloatingText(x + rect.left, y + rect.top, 
-                                             `ORDER COMPLETE! +${baseScore * combo}`, '#FFD700');
+                                             `ORDER COMPLETE! +${baseScore * combo}`, colorTheme.primary);
                             
                             // Small celebration shake and flash
                             startScreenShake(4, 8);
-                            startScreenFlash('#FFD700', 0.3, 10);
+                            startScreenFlash(colorTheme.primary, 0.3, 10);
                             
                             // Trigger score bounce animation
                             document.getElementById('score').classList.add('bounce');
@@ -754,11 +985,14 @@
                             const orderIndex = orders.indexOf(order);
                             orders.splice(orderIndex, 1);
                             
-                            // Create celebration particles
+                            // Create celebration particles with enhanced effects
                             for (let j = 0; j < 20; j++) {
+                                const celebrationEmojis = ['✨', '🎉', '🎆', '⭐', '💫', '🌟'];
+                                const randomEmoji = celebrationEmojis[Math.floor(Math.random() * celebrationEmojis.length)];
+                                const celebrationColor = j % 3 === 0 ? colorTheme.primary : j % 3 === 1 ? colorTheme.accent : colorTheme.secondary;
                                 particles.push(new Particle(order.x + order.width / 2, 
                                                            order.y + order.height / 2, 
-                                                           '#FFD700', '✨', 'celebration'));
+                                                           celebrationColor, randomEmoji, 'celebration'));
                             }
                             
                             // Spawn new order
@@ -769,17 +1003,17 @@
                     
                     if (!correctOrder) {
                         combo = 1;
-                        createFloatingText(x + rect.left, y + rect.top, 'WRONG!', '#FF0000');
+                        createFloatingText(x + rect.left, y + rect.top, 'WRONG!', colorTheme.warning);
                         
                         // Screen shake and red flash for wrong ingredient
                         startScreenShake(8, 15);
-                        startScreenFlash('#FF4444', 0.4, 12);
+                        startScreenFlash(colorTheme.warning, 0.4, 12);
                         
                         // Create error particles
                         for (let j = 0; j < 5; j++) {
                             particles.push(new Particle(ingredient.x + ingredient.data.size / 2, 
                                                        ingredient.y + ingredient.data.size / 2, 
-                                                       '#FF0000'));
+                                                       colorTheme.warning));
                         }
                     }
                     
@@ -794,7 +1028,19 @@
             document.getElementById('score').textContent = `Score: ${score}`;
             document.getElementById('combo').textContent = `Combo: x${combo}`;
             
+            // Update UI colors based on theme
+            const scoreElement = document.getElementById('score');
             const comboElement = document.getElementById('combo');
+            
+            // Dynamic score coloring
+            scoreElement.style.color = colorTheme.primary;
+            scoreElement.style.textShadow = `2px 2px 4px rgba(255, 255, 255, 0.5), 0 0 10px ${colorTheme.primary}40`;
+            
+            // Dynamic combo coloring with intensity based on level
+            const comboIntensity = Math.min(combo / 5, 1);
+            comboElement.style.color = colorTheme.secondary;
+            comboElement.style.textShadow = `2px 2px 4px rgba(255, 255, 255, 0.5), 0 0 ${8 + comboIntensity * 12}px ${colorTheme.secondary}60`;
+            
             comboElement.classList.remove('pulse');
             void comboElement.offsetWidth; // Force reflow
             if (combo > 1) {
@@ -832,6 +1078,9 @@
 
             frameCount++;
             
+            // Update dynamic color theme
+            updateColorTheme();
+            
             // Update screen shake and flash
             updateScreenShake();
             updateScreenFlash();
@@ -854,11 +1103,11 @@
                     // Order expired
                     lives--;
                     combo = 1;
-                    createFloatingText(orders[i].x + 60, orders[i].y + 90, 'EXPIRED!', '#FF0000');
+                    createFloatingText(orders[i].x + 60, orders[i].y + 90, 'EXPIRED!', colorTheme.warning);
                     
                     // Screen shake and red flash for expired order
                     startScreenShake(12, 20);
-                    startScreenFlash('#FF0000', 0.5, 15);
+                    startScreenFlash(colorTheme.warning, 0.5, 15);
                     
                     // Trigger hearts shake animation
                     document.getElementById('lives').classList.add('shake');
@@ -928,6 +1177,9 @@
             ingredientSpeed = 2;
             spawnRate = 80;
             lastSpawn = 0;
+            
+            // Reset color theme
+            colorTheme.hue = 0;
 
             // Spawn initial orders
             for (let i = 0; i < 2; i++) {
