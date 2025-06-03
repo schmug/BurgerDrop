@@ -1,0 +1,11 @@
+name = "burger-drop"
+main = "src/worker.js"
+compatibility_date = "2023-12-01"
+
+[site]
+bucket = "./dist"
+
+[[rules]]
+type = "Text"
+globs = ["**/*.html"]
+fallthrough = true
