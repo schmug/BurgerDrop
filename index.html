@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Order Up! - Restaurant Game</title>
+    <title>Burger Drop! - Restaurant Game</title>
     <style>
         * {
             margin: 0;
@@ -273,7 +273,7 @@
     </div>
 
     <div id="startScreen">
-        <h1>🍔 Order Up! 🍔</h1>
+        <h1>🍔 Burger Drop! 🍔</h1>
         <p>Tap falling ingredients to complete customer orders!</p>
         <button onclick="startGame()">Start Game</button>
     </div>
@@ -679,22 +679,54 @@
                     if (i < this.currentIndex) {
                         ctx.globalAlpha = 0.3; // Completed ingredients
                     } else if (i === this.currentIndex) {
-                        // Highlight current ingredient
-                        ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
-                        ctx.fillRect(this.x + 5, yPos - 15, this.width - 10, 25);
+                        // Enhanced highlight for current ingredient
+                        const highlightGradient = ctx.createLinearGradient(this.x + 5, yPos - 15, this.x + this.width - 5, yPos + 10);
+                        highlightGradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+                        highlightGradient.addColorStop(0.5, 'rgba(255, 215, 0, 0.9)');
+                        highlightGradient.addColorStop(1, 'rgba(255, 165, 0, 0.7)');
+                        
+                        ctx.fillStyle = highlightGradient;
+                        ctx.fillRect(this.x + 3, yPos - 17, this.width - 6, 29);
+                        
+                        // Add border for better visibility
+                        ctx.strokeStyle = '#FF8C00';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(this.x + 3, yPos - 17, this.width - 6, 29);
+                        
+                        // Add pulsing effect
+                        const pulseAlpha = 0.3 + Math.sin(frameCount * 0.15) * 0.2;
+                        ctx.fillStyle = `rgba(255, 215, 0, ${pulseAlpha})`;
+                        ctx.fillRect(this.x + 1, yPos - 19, this.width - 2, 33);
                     }
                     
                     // Enhanced order ingredient display
                     ctx.font = '20px Arial';
                     ctx.textAlign = 'center';
                     
-                    // Add subtle glow for current ingredient
                     if (i === this.currentIndex) {
-                        ctx.shadowColor = colorTheme.primary;
-                        ctx.shadowBlur = 8;
-                        ctx.fillText(ingredient.emoji, this.x + this.width / 2, yPos);
+                        // Enhanced glow and contrast for current ingredient
+                        ctx.shadowColor = '#FF4500';
+                        ctx.shadowBlur = 12;
+                        ctx.shadowOffsetX = 0;
+                        ctx.shadowOffsetY = 0;
+                        
+                        // Add white outline for better contrast
+                        ctx.strokeStyle = '#FFFFFF';
+                        ctx.lineWidth = 3;
+                        ctx.strokeText(ingredient.emoji, this.x + this.width / 2, yPos);
+                        
+                        // Scale up the current ingredient slightly
+                        ctx.save();
+                        ctx.translate(this.x + this.width / 2, yPos);
+                        ctx.scale(1.2, 1.2);
+                        ctx.fillText(ingredient.emoji, 0, 0);
+                        ctx.restore();
+                        
+                        // Reset shadow
                         ctx.shadowColor = 'transparent';
                         ctx.shadowBlur = 0;
+                        ctx.shadowOffsetX = 0;
+                        ctx.shadowOffsetY = 0;
                     } else {
                         ctx.fillText(ingredient.emoji, this.x + this.width / 2, yPos);
                     }
