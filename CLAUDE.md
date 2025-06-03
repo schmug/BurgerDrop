@@ -32,14 +32,22 @@ BurgerDrop is a single-file HTML5 canvas game where players tap falling ingredie
 - Game uses localStorage for high score persistence (with fallback for sandboxed environments)
 - Responsive design with canvas resizing for different screen sizes
 - Mobile-optimized with touch event handling and scroll prevention
-- Cloudflare Workers for deployment
-- TypeScript for type safety and better code quality
 
-## TODO
+## Deployment
 
-- Add sound effects
-- Add music
-- Add particle effects
-- Add particle physics
-- Add particle emitter
-- Cloudflare and Wrangler setup
+- **Cloudflare Workers**: Game is deployed via Cloudflare Workers with embedded HTML
+- **GitHub Actions**: Automatic deployment on push to main branch
+- **Wrangler**: Uses wrangler 4.18.0 for deployment management
+- **Worker Architecture**: HTML is embedded directly in `src/worker.js` for serverless deployment
+
+## Commands
+
+- `npm run dev` - Start local development server with wrangler
+- `npm run deploy` - Deploy to Cloudflare Workers
+- `wrangler login` - Authenticate with Cloudflare (required once)
+
+## Setup Requirements
+
+For deployment, add these GitHub repository secrets:
+- `CLOUDFLARE_API_TOKEN` - Your Cloudflare API token
+- `CLOUDFLARE_ACCOUNT_ID` - Your Cloudflare account ID
