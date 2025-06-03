@@ -16,19 +16,28 @@
 
         body {
             font-family: 'Arial', sans-serif;
-            background: linear-gradient(to bottom, #87CEEB, #98D8C8);
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(255, 215, 0, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 165, 0, 0.2) 0%, transparent 50%),
+                conic-gradient(from 45deg at 50% 50%, #87CEEB, #98D8C8, #87CEEB, #98D8C8);
             overflow: hidden;
             position: fixed;
             width: 100%;
             height: 100%;
+            animation: subtleShift 20s ease-in-out infinite;
         }
 
         #gameCanvas {
-            background: linear-gradient(to bottom, #FFE4B5, #FFDEAD);
+            background: 
+                radial-gradient(ellipse at top, rgba(255, 255, 255, 0.2) 0%, transparent 70%),
+                linear-gradient(135deg, #FFE4B5 0%, #FFDEAD 50%, #DEB887 100%);
             display: block;
             margin: 0 auto;
             border: 3px solid #8B4513;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            box-shadow: 
+                0 4px 6px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.1));
         }
 
         #ui {
@@ -46,7 +55,11 @@
             font-size: 24px;
             font-weight: bold;
             color: #333;
-            text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.5);
+            text-shadow: 
+                2px 2px 4px rgba(255, 255, 255, 0.5),
+                0 0 10px rgba(255, 215, 0, 0.3);
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+            transform: perspective(100px) rotateX(2deg);
         }
 
         #combo {
@@ -56,8 +69,12 @@
             font-size: 20px;
             font-weight: bold;
             color: #FF6347;
-            text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.5);
-            transition: transform 0.3s;
+            text-shadow: 
+                2px 2px 4px rgba(255, 255, 255, 0.5),
+                0 0 8px rgba(255, 99, 71, 0.4);
+            transition: transform 0.3s, filter 0.3s;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+            transform: perspective(100px) rotateX(-1deg);
         }
 
         #combo.pulse {
@@ -70,6 +87,8 @@
             right: 10px;
             font-size: 24px;
             transition: all 0.3s ease;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1)) drop-shadow(0 0 8px rgba(255, 0, 0, 0.2));
+            transform: perspective(100px) rotateX(1deg);
         }
 
         #lives.shake {
@@ -85,12 +104,18 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(255, 255, 255, 0.95);
+            background: 
+                radial-gradient(circle at center, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.92) 100%);
             padding: 30px;
             border-radius: 15px;
             text-align: center;
             display: none;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            box-shadow: 
+                0 6px 12px rgba(0, 0, 0, 0.3),
+                0 0 40px rgba(255, 215, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             pointer-events: auto;
         }
 
@@ -170,13 +195,27 @@
             animation: buttonPress 0.1s ease-out;
         }
 
+        @keyframes subtleShift {
+            0%, 100% { filter: hue-rotate(0deg) brightness(1); }
+            50% { filter: hue-rotate(10deg) brightness(1.05); }
+        }
+
+        @keyframes startScreenShift {
+            0%, 100% { filter: hue-rotate(0deg) brightness(1); }
+            33% { filter: hue-rotate(15deg) brightness(1.1); }
+            66% { filter: hue-rotate(-10deg) brightness(0.95); }
+        }
+
         #startScreen {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(255, 215, 0, 0.3) 0%, transparent 60%),
+                radial-gradient(circle at 70% 70%, rgba(255, 105, 180, 0.2) 0%, transparent 60%),
+                conic-gradient(from 180deg at 50% 50%, #667eea, #764ba2, #667eea);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -184,6 +223,7 @@
             color: white;
             text-align: center;
             z-index: 100;
+            animation: startScreenShift 15s ease-in-out infinite;
         }
 
         #startScreen h1 {
@@ -328,6 +368,13 @@
                 ctx.save();
                 ctx.translate(this.x + this.data.size / 2, this.y + this.data.size / 2);
                 ctx.rotate(this.rotation);
+                
+                // Add shadow to ingredients
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                ctx.shadowBlur = 4;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
+                
                 ctx.font = `${this.data.size}px Arial`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
@@ -367,12 +414,34 @@
                 this.x = margin + index * (this.width + margin);
                 this.y = 80;
 
-                // Order background
-                ctx.fillStyle = this.timeLeft < 10000 ? 'rgba(255, 100, 100, 0.9)' : 'rgba(255, 255, 255, 0.9)';
+                // Order background with gradient
+                ctx.save();
+                const isExpiring = this.timeLeft < 10000;
+                const gradient = ctx.createLinearGradient(this.x, this.y, this.x, this.y + this.height);
+                
+                if (isExpiring) {
+                    gradient.addColorStop(0, 'rgba(255, 120, 120, 0.95)');
+                    gradient.addColorStop(1, 'rgba(255, 80, 80, 0.9)');
+                } else {
+                    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+                    gradient.addColorStop(1, 'rgba(245, 245, 245, 0.9)');
+                }
+                
+                // Add shadow
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+                ctx.shadowBlur = 8;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 3;
+                
+                ctx.fillStyle = gradient;
                 ctx.fillRect(this.x, this.y, this.width, this.height);
-                ctx.strokeStyle = '#333';
+                
+                // Reset shadow for border
+                ctx.shadowColor = 'transparent';
+                ctx.strokeStyle = isExpiring ? '#CC3333' : '#333';
                 ctx.lineWidth = 2;
                 ctx.strokeRect(this.x, this.y, this.width, this.height);
+                ctx.restore();
 
                 // Order name
                 ctx.fillStyle = '#333';
@@ -748,9 +817,18 @@
             // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw kitchen background elements
-            ctx.fillStyle = 'rgba(139, 69, 19, 0.1)';
+            // Draw enhanced kitchen background with gradients
+            const kitchenGradient = ctx.createLinearGradient(0, canvas.height - 100, 0, canvas.height);
+            kitchenGradient.addColorStop(0, 'rgba(139, 69, 19, 0.2)');
+            kitchenGradient.addColorStop(0.5, 'rgba(101, 67, 33, 0.3)');
+            kitchenGradient.addColorStop(1, 'rgba(83, 53, 27, 0.4)');
+            ctx.fillStyle = kitchenGradient;
             ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
+            
+            // Add subtle depth shadows
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+            ctx.shadowBlur = 5;
+            ctx.shadowOffsetY = 2;
 
             frameCount++;
             
@@ -824,6 +902,12 @@
                     particles.splice(i, 1);
                 }
             }
+
+            // Reset shadows
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
 
             // Draw screen flash overlay (must be last)
             drawScreenFlash();
