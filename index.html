@@ -99,6 +99,52 @@
         #lives.shake {
             animation: heartShake 0.5s ease-in-out;
         }
+        
+        #powerUpStatus {
+            position: absolute;
+            top: 70px;
+            left: 10px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .power-up-indicator {
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 15px;
+            border: 2px solid;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            min-width: 120px;
+            transition: all 0.3s ease;
+        }
+        
+        .power-up-indicator.speed-boost {
+            border-color: #FFD700;
+            background: linear-gradient(45deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.4));
+        }
+        
+        .power-up-indicator.time-freeze {
+            border-color: #87CEEB;
+            background: linear-gradient(45deg, rgba(135, 206, 235, 0.2), rgba(135, 206, 235, 0.4));
+        }
+        
+        .power-up-indicator.score-multiplier {
+            border-color: #FF69B4;
+            background: linear-gradient(45deg, rgba(255, 105, 180, 0.2), rgba(255, 105, 180, 0.4));
+        }
+        
+        .power-up-timer {
+            margin-left: auto;
+            font-size: 12px;
+            opacity: 0.8;
+        }
 
         #score.bounce {
             animation: scoreBounce 0.4s ease-out;
@@ -277,6 +323,7 @@
         <div id="score">Score: 0</div>
         <div id="combo">Combo: x1</div>
         <div id="lives">❤️❤️❤️</div>
+        <div id="powerUpStatus"></div>
         
         <div id="gameOver">
             <h2>Game Over!</h2>
@@ -313,10 +360,12 @@
         let ingredients = [];
         let orders = [];
         let particles = [];
+        let powerUps = [];
         let frameCount = 0;
         let ingredientSpeed = 2;
         let spawnRate = 80;
         let lastSpawn = 0;
+        let lastPowerUpSpawn = 0;
         
         // Screen shake variables
         let shakeIntensity = 0;
@@ -337,6 +386,113 @@
             warning: '#FF4444',
             hue: 0
         };
+        
+        // Power-up system
+        let activePowerUps = {
+            speedBoost: { active: false, timeLeft: 0, multiplier: 0.5 },
+            timeFreeze: { active: false, timeLeft: 0 },
+            scoreMultiplier: { active: false, timeLeft: 0, multiplier: 2 }
+        };
+        
+        const powerUpTypes = {
+            speedBoost: {
+                emoji: '⚡',
+                name: 'Speed Boost',
+                color: '#FFD700',
+                duration: 8000, // 8 seconds
+                description: 'Slows ingredient fall speed'
+            },
+            timeFreeze: {
+                emoji: '❄️',
+                name: 'Time Freeze',
+                color: '#87CEEB',
+                duration: 5000, // 5 seconds
+                description: 'Freezes order timers'
+            },
+            scoreMultiplier: {
+                emoji: '💎',
+                name: 'Score Boost',
+                color: '#FF69B4',
+                duration: 10000, // 10 seconds
+                description: 'Double score points'
+            }
+        };
+        
+        class PowerUp {
+            constructor(type) {
+                this.type = type;
+                this.data = powerUpTypes[type];
+                this.x = Math.random() * (canvas.width - 50);
+                this.y = -50;
+                this.speed = 1 + Math.random() * 0.5; // Slower than ingredients
+                this.rotation = 0;
+                this.rotationSpeed = 0.05;
+                this.collected = false;
+                this.pulsePhase = Math.random() * Math.PI * 2;
+                this.size = 40;
+            }
+            
+            update() {
+                this.y += this.speed;
+                this.rotation += this.rotationSpeed;
+                this.pulsePhase += 0.1;
+            }
+            
+            draw() {
+                ctx.save();
+                
+                // Pulsing glow effect
+                const pulse = Math.sin(this.pulsePhase) * 0.3 + 0.7;
+                const glowSize = this.size * pulse;
+                
+                // Outer glow
+                const gradient = ctx.createRadialGradient(
+                    this.x + this.size/2, this.y + this.size/2, 0,
+                    this.x + this.size/2, this.y + this.size/2, glowSize
+                );
+                gradient.addColorStop(0, this.data.color + '80');
+                gradient.addColorStop(0.5, this.data.color + '40');
+                gradient.addColorStop(1, this.data.color + '00');
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(
+                    this.x - glowSize/2 + this.size/2, 
+                    this.y - glowSize/2 + this.size/2, 
+                    glowSize, glowSize
+                );
+                
+                // Main power-up
+                ctx.translate(this.x + this.size/2, this.y + this.size/2);
+                ctx.rotate(this.rotation);
+                
+                // Background circle
+                ctx.fillStyle = this.data.color;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size/2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Border
+                ctx.strokeStyle = '#FFFFFF';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                
+                // Emoji
+                ctx.font = `${this.size * 0.6}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillText(this.data.emoji, 0, 0);
+                
+                ctx.restore();
+            }
+            
+            isClicked(x, y) {
+                const centerX = this.x + this.size/2;
+                const centerY = this.y + this.size/2;
+                const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+                return distance <= this.size/2;
+            }
+        }
         
         // Custom easing functions
         const easing = {
@@ -471,6 +627,66 @@
             canvasPatterns.paper = createTexturePattern('paper', 100);
         }
         
+        // Power-up functions
+        function activatePowerUp(type) {
+            const powerUp = activePowerUps[type];
+            const powerUpData = powerUpTypes[type];
+            
+            powerUp.active = true;
+            powerUp.timeLeft = powerUpData.duration;
+            
+            // Type-specific activation
+            switch(type) {
+                case 'speedBoost':
+                    powerUp.multiplier = 0.5; // Slow down ingredients
+                    break;
+                case 'timeFreeze':
+                    // Timer freeze handled in order update
+                    break;
+                case 'scoreMultiplier':
+                    powerUp.multiplier = 2; // Double score
+                    break;
+            }
+            
+            // Visual feedback
+            startScreenFlash(powerUpData.color, 0.2, 8);
+            vibrateSuccess();
+            
+            // Create celebration particles
+            for (let i = 0; i < 15; i++) {
+                particles.push(new Particle(
+                    canvas.width/2 + (Math.random() - 0.5) * 100,
+                    canvas.height/2 + (Math.random() - 0.5) * 100,
+                    powerUpData.color,
+                    powerUpData.emoji,
+                    'celebration'
+                ));
+            }
+        }
+        
+        function updatePowerUps() {
+            // Update active power-ups
+            Object.keys(activePowerUps).forEach(type => {
+                const powerUp = activePowerUps[type];
+                if (powerUp.active) {
+                    powerUp.timeLeft -= 16; // ~60fps
+                    if (powerUp.timeLeft <= 0) {
+                        powerUp.active = false;
+                        powerUp.timeLeft = 0;
+                    }
+                }
+            });
+        }
+        
+        function spawnPowerUp() {
+            if (powerUps.length < 1 && frameCount - lastPowerUpSpawn > 600) { // Every 10 seconds minimum
+                const types = Object.keys(powerUpTypes);
+                const randomType = types[Math.floor(Math.random() * types.length)];
+                powerUps.push(new PowerUp(randomType));
+                lastPowerUpSpawn = frameCount;
+            }
+        }
+        
         function updateColorTheme() {
             // Base hue changes based on combo level
             const targetHue = Math.min((combo - 1) * 30, 300); // Max 300 degrees for rainbow effect
@@ -589,6 +805,7 @@
                 this.speed = ingredientSpeed + Math.random();
                 this.rotation = Math.random() * Math.PI * 2;
                 this.rotationSpeed = (Math.random() - 0.5) * 0.1;
+                this.baseSpeed = this.speed;
                 this.collected = false;
                 this.startY = this.y;
                 this.fallProgress = 0;
@@ -602,6 +819,11 @@
             }
 
             update() {
+                // Apply speed boost power-up
+                const speedMultiplier = activePowerUps.speedBoost.active ? 
+                    activePowerUps.speedBoost.multiplier : 1;
+                this.speed = this.baseSpeed * speedMultiplier;
+                
                 // Smooth falling motion with easing
                 this.fallProgress += 0.02;
                 const fallEase = easing.easeInQuad(Math.min(this.fallProgress, 1));
@@ -726,7 +948,11 @@
             }
 
             update(deltaTime) {
-                this.timeLeft -= deltaTime;
+                // Apply time freeze power-up
+                if (!activePowerUps.timeFreeze.active) {
+                    this.timeLeft -= deltaTime;
+                }
+                
                 if (this.timeLeft <= 0 && !this.completed) {
                     return false; // Order expired
                 }
@@ -1363,6 +1589,19 @@
             const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
             const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
 
+            // Check power-up taps first
+            for (let i = powerUps.length - 1; i >= 0; i--) {
+                const powerUp = powerUps[i];
+                if (powerUp.isClicked(x, y) && !powerUp.collected) {
+                    powerUp.collected = true;
+                    activatePowerUp(powerUp.type);
+                    createFloatingText(x + rect.left, y + rect.top, 
+                        powerUp.data.name + '!', powerUp.data.color);
+                    powerUps.splice(i, 1);
+                    return; // Don't check ingredients if power-up was clicked
+                }
+            }
+            
             // Check ingredient taps
             for (let i = ingredients.length - 1; i >= 0; i--) {
                 const ingredient = ingredients[i];
@@ -1375,8 +1614,15 @@
                         const result = order.checkIngredient(ingredient.type);
                         if (result === 'correct') {
                             correctOrder = true;
-                            score += 10 * combo;
-                            createFloatingText(x + rect.left, y + rect.top, `+${10 * combo}`, '#00FF00');
+                            const basePoints = 10 * combo;
+                            const scoreMultiplier = activePowerUps.scoreMultiplier.active ? 
+                                activePowerUps.scoreMultiplier.multiplier : 1;
+                            const finalScore = Math.floor(basePoints * scoreMultiplier);
+                            
+                            score += finalScore;
+                            const scoreText = scoreMultiplier > 1 ? 
+                                `+${finalScore} (x${scoreMultiplier})` : `+${finalScore}`;
+                            createFloatingText(x + rect.left, y + rect.top, scoreText, '#00FF00');
                             
                             // Subtle green flash for correct ingredient
                             startScreenFlash('#00FF88', 0.15, 6);
@@ -1393,10 +1639,17 @@
                             correctOrder = true;
                             const bonus = Math.floor(order.timeLeft / 1000) * 5;
                             const baseScore = 50 + bonus;
-                            score += baseScore * combo;
+                            const comboScore = baseScore * combo;
+                            const scoreMultiplier = activePowerUps.scoreMultiplier.active ? 
+                                activePowerUps.scoreMultiplier.multiplier : 1;
+                            const finalScore = Math.floor(comboScore * scoreMultiplier);
                             
-                            createFloatingText(x + rect.left, y + rect.top, 
-                                             `ORDER COMPLETE! +${baseScore * combo}`, colorTheme.primary);
+                            score += finalScore;
+                            
+                            const scoreText = scoreMultiplier > 1 ? 
+                                `ORDER COMPLETE! +${finalScore} (x${scoreMultiplier})` : 
+                                `ORDER COMPLETE! +${finalScore}`;
+                            createFloatingText(x + rect.left, y + rect.top, scoreText, colorTheme.primary);
                             
                             // Small celebration shake and flash
                             startScreenShake(4, 8);
@@ -1486,6 +1739,32 @@
                 heartsHTML += '❤️';
             }
             document.getElementById('lives').textContent = heartsHTML;
+            
+            // Update power-up status
+            updatePowerUpUI();
+        }
+        
+        function updatePowerUpUI() {
+            const statusContainer = document.getElementById('powerUpStatus');
+            statusContainer.innerHTML = '';
+            
+            Object.keys(activePowerUps).forEach(type => {
+                const powerUp = activePowerUps[type];
+                if (powerUp.active) {
+                    const powerUpData = powerUpTypes[type];
+                    const timeLeft = Math.ceil(powerUp.timeLeft / 1000);
+                    
+                    const indicator = document.createElement('div');
+                    indicator.className = `power-up-indicator ${type.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
+                    indicator.innerHTML = `
+                        <span>${powerUpData.emoji}</span>
+                        <span>${powerUpData.name}</span>
+                        <span class="power-up-timer">${timeLeft}s</span>
+                    `;
+                    
+                    statusContainer.appendChild(indicator);
+                }
+            });
         }
 
         function gameLoop(currentTime) {
@@ -1536,6 +1815,9 @@
             // Update dynamic color theme
             updateColorTheme();
             
+            // Update power-ups
+            updatePowerUps();
+            
             // Update screen shake and flash
             updateScreenShake();
             updateScreenFlash();
@@ -1551,6 +1833,9 @@
                     spawnRate = Math.max(spawnRate - 2, 40);
                 }
             }
+            
+            // Spawn power-ups
+            spawnPowerUp();
 
             // Update and draw orders
             for (let i = orders.length - 1; i >= 0; i--) {
@@ -1596,6 +1881,18 @@
                     ingredients.splice(i, 1);
                 }
             }
+            
+            // Update and draw power-ups
+            for (let i = powerUps.length - 1; i >= 0; i--) {
+                const powerUp = powerUps[i];
+                powerUp.update();
+                powerUp.draw();
+
+                // Remove power-ups that fall off screen
+                if (powerUp.y > canvas.height) {
+                    powerUps.splice(i, 1);
+                }
+            }
 
             // Update and draw particles
             for (let i = particles.length - 1; i >= 0; i--) {
@@ -1632,13 +1929,21 @@
             ingredients = [];
             orders = [];
             particles = [];
+            powerUps = [];
             frameCount = 0;
             ingredientSpeed = 2;
             spawnRate = 80;
             lastSpawn = 0;
+            lastPowerUpSpawn = 0;
             
             // Reset color theme
             colorTheme.hue = 0;
+            
+            // Reset power-ups
+            Object.keys(activePowerUps).forEach(type => {
+                activePowerUps[type].active = false;
+                activePowerUps[type].timeLeft = 0;
+            });
             
             // Initialize patterns if not already done
             if (!canvasPatterns.wood) {
