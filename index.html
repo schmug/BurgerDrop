@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Burger Drop! - Restaurant Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One:wght@400&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -15,7 +18,7 @@
         }
 
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'Nunito', 'Arial', sans-serif;
             background: 
                 radial-gradient(circle at 20% 80%, rgba(255, 215, 0, 0.3) 0%, transparent 50%),
                 radial-gradient(circle at 80% 20%, rgba(255, 165, 0, 0.2) 0%, transparent 50%),
@@ -52,8 +55,9 @@
             position: absolute;
             top: 10px;
             left: 10px;
+            font-family: 'Nunito', sans-serif;
             font-size: 24px;
-            font-weight: bold;
+            font-weight: 800;
             color: #333;
             text-shadow: 
                 2px 2px 4px rgba(255, 255, 255, 0.5),
@@ -66,8 +70,9 @@
             position: absolute;
             top: 40px;
             left: 10px;
+            font-family: 'Nunito', sans-serif;
             font-size: 20px;
-            font-weight: bold;
+            font-weight: 700;
             color: #FF6347;
             text-shadow: 
                 2px 2px 4px rgba(255, 255, 255, 0.5),
@@ -120,9 +125,11 @@
         }
 
         #gameOver h2 {
-            font-size: 36px;
+            font-family: 'Fredoka One', cursive;
+            font-size: 40px;
             color: #333;
             margin-bottom: 20px;
+            letter-spacing: 1px;
         }
 
         #gameOver button {
@@ -130,12 +137,15 @@
             color: white;
             border: none;
             padding: 12px 30px;
+            font-family: 'Nunito', sans-serif;
             font-size: 20px;
-            border-radius: 8px;
+            font-weight: 600;
+            border-radius: 10px;
             cursor: pointer;
             margin-top: 20px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
             transition: transform 0.2s;
+            letter-spacing: 0.5px;
         }
 
         #gameOver button:active {
@@ -227,9 +237,11 @@
         }
 
         #startScreen h1 {
-            font-size: 48px;
+            font-family: 'Fredoka One', cursive;
+            font-size: 52px;
             margin-bottom: 20px;
-            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+            text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.4);
+            letter-spacing: 2px;
         }
 
         #startScreen p {
@@ -243,12 +255,14 @@
             color: #333;
             border: none;
             padding: 15px 40px;
+            font-family: 'Nunito', sans-serif;
             font-size: 24px;
-            font-weight: bold;
-            border-radius: 10px;
+            font-weight: 700;
+            border-radius: 12px;
             cursor: pointer;
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
             transition: transform 0.2s;
+            letter-spacing: 1px;
         }
 
         #startScreen button:active {
@@ -358,6 +372,104 @@
                 }
             }
         };
+        
+        // Canvas pattern and texture system
+        let canvasPatterns = {
+            wood: null,
+            marble: null,
+            fabric: null,
+            paper: null
+        };
+        
+        function createTexturePattern(type, size = 50) {
+            const patternCanvas = document.createElement('canvas');
+            patternCanvas.width = size;
+            patternCanvas.height = size;
+            const patternCtx = patternCanvas.getContext('2d');
+            
+            switch(type) {
+                case 'wood':
+                    // Wood grain texture
+                    const woodGradient = patternCtx.createLinearGradient(0, 0, 0, size);
+                    woodGradient.addColorStop(0, '#DEB887');
+                    woodGradient.addColorStop(0.3, '#D2B48C');
+                    woodGradient.addColorStop(0.7, '#CD853F');
+                    woodGradient.addColorStop(1, '#A0522D');
+                    patternCtx.fillStyle = woodGradient;
+                    patternCtx.fillRect(0, 0, size, size);
+                    
+                    // Add wood grain lines
+                    patternCtx.strokeStyle = 'rgba(139, 69, 19, 0.3)';
+                    patternCtx.lineWidth = 1;
+                    for(let i = 0; i < 8; i++) {
+                        const y = (i * size / 8) + Math.sin(i) * 3;
+                        patternCtx.beginPath();
+                        patternCtx.moveTo(0, y);
+                        patternCtx.lineTo(size, y + Math.sin(i * 0.5) * 2);
+                        patternCtx.stroke();
+                    }
+                    break;
+                    
+                case 'marble':
+                    // Marble texture
+                    const marbleGradient = patternCtx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+                    marbleGradient.addColorStop(0, '#F8F8FF');
+                    marbleGradient.addColorStop(0.5, '#E6E6FA');
+                    marbleGradient.addColorStop(1, '#D3D3D3');
+                    patternCtx.fillStyle = marbleGradient;
+                    patternCtx.fillRect(0, 0, size, size);
+                    
+                    // Add marble veins
+                    patternCtx.strokeStyle = 'rgba(169, 169, 169, 0.4)';
+                    patternCtx.lineWidth = 2;
+                    patternCtx.beginPath();
+                    patternCtx.moveTo(0, size * 0.3);
+                    patternCtx.quadraticCurveTo(size * 0.7, size * 0.1, size, size * 0.8);
+                    patternCtx.stroke();
+                    break;
+                    
+                case 'fabric':
+                    // Fabric weave texture
+                    patternCtx.fillStyle = '#F5F5DC';
+                    patternCtx.fillRect(0, 0, size, size);
+                    
+                    patternCtx.fillStyle = 'rgba(210, 180, 140, 0.5)';
+                    const gridSize = size / 10;
+                    for(let x = 0; x < size; x += gridSize) {
+                        for(let y = 0; y < size; y += gridSize) {
+                            if((Math.floor(x/gridSize) + Math.floor(y/gridSize)) % 2) {
+                                patternCtx.fillRect(x, y, gridSize, gridSize);
+                            }
+                        }
+                    }
+                    break;
+                    
+                case 'paper':
+                    // Paper texture
+                    patternCtx.fillStyle = '#FFFEF0';
+                    patternCtx.fillRect(0, 0, size, size);
+                    
+                    // Add paper fibers
+                    for(let i = 0; i < 20; i++) {
+                        patternCtx.strokeStyle = `rgba(220, 220, 200, ${Math.random() * 0.3})`;
+                        patternCtx.lineWidth = 0.5;
+                        patternCtx.beginPath();
+                        patternCtx.moveTo(Math.random() * size, Math.random() * size);
+                        patternCtx.lineTo(Math.random() * size, Math.random() * size);
+                        patternCtx.stroke();
+                    }
+                    break;
+            }
+            
+            return ctx.createPattern(patternCanvas, 'repeat');
+        }
+        
+        function initializePatterns() {
+            canvasPatterns.wood = createTexturePattern('wood', 60);
+            canvasPatterns.marble = createTexturePattern('marble', 80);
+            canvasPatterns.fabric = createTexturePattern('fabric', 40);
+            canvasPatterns.paper = createTexturePattern('paper', 100);
+        }
         
         function updateColorTheme() {
             // Base hue changes based on combo level
@@ -547,7 +659,7 @@
                     this.data.variants[Math.floor(frameCount / 30) % this.data.variants.length] : 
                     this.data.emoji;
                 
-                ctx.font = `${this.data.size}px Arial`;
+                ctx.font = `${this.data.size}px Arial`; // Keep Arial for emoji compatibility
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(emojiToUse, 0, 0);
@@ -626,24 +738,32 @@
                 this.x = margin + index * (this.width + margin);
                 this.y = 80;
 
-                // Order background with gradient
+                // Enhanced order background with texture
                 ctx.save();
                 const isExpiring = this.timeLeft < 10000;
+                
+                // Add paper texture background
+                if (canvasPatterns.paper) {
+                    ctx.fillStyle = canvasPatterns.paper;
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                }
+                
+                // Add gradient overlay
                 const gradient = ctx.createLinearGradient(this.x, this.y, this.x, this.y + this.height);
                 
                 if (isExpiring) {
-                    gradient.addColorStop(0, 'rgba(255, 120, 120, 0.95)');
-                    gradient.addColorStop(1, 'rgba(255, 80, 80, 0.9)');
+                    gradient.addColorStop(0, 'rgba(255, 120, 120, 0.85)');
+                    gradient.addColorStop(1, 'rgba(255, 80, 80, 0.8)');
                 } else {
-                    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
-                    gradient.addColorStop(1, 'rgba(245, 245, 245, 0.9)');
+                    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+                    gradient.addColorStop(1, 'rgba(245, 245, 245, 0.8)');
                 }
                 
                 // Add shadow
-                ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-                ctx.shadowBlur = 8;
-                ctx.shadowOffsetX = 2;
-                ctx.shadowOffsetY = 3;
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                ctx.shadowBlur = 10;
+                ctx.shadowOffsetX = 3;
+                ctx.shadowOffsetY = 4;
                 
                 ctx.fillStyle = gradient;
                 ctx.fillRect(this.x, this.y, this.width, this.height);
@@ -655,16 +775,16 @@
                 ctx.strokeRect(this.x, this.y, this.width, this.height);
                 ctx.restore();
 
-                // Order name
+                // Order name with better typography
                 ctx.fillStyle = '#333';
-                ctx.font = 'bold 12px Arial';
+                ctx.font = '600 12px Nunito, Arial';
                 ctx.textAlign = 'center';
                 ctx.fillText(this.template.name, this.x + this.width / 2, this.y + 15);
 
-                // Timer
+                // Timer with enhanced typography
                 const timeSeconds = Math.ceil(this.timeLeft / 1000);
                 ctx.fillStyle = this.timeLeft < 10000 ? '#FF0000' : '#333';
-                ctx.font = 'bold 14px Arial';
+                ctx.font = '700 14px Nunito, Arial';
                 ctx.fillText(`${timeSeconds}s`, this.x + this.width / 2, this.y + 30);
 
                 // Ingredients (from bottom to top)
@@ -700,7 +820,7 @@
                     }
                     
                     // Enhanced order ingredient display
-                    ctx.font = '20px Arial';
+                    ctx.font = '20px Arial'; // Keep Arial for emoji compatibility
                     ctx.textAlign = 'center';
                     
                     if (i === this.currentIndex) {
@@ -802,7 +922,7 @@
                 ctx.scale(this.scale, this.scale);
                 
                 if (this.text) {
-                    ctx.font = `bold ${20 + this.size * 2}px Arial`;
+                    ctx.font = `bold ${20 + this.size * 2}px Arial`; // Keep Arial for emoji compatibility
                     ctx.fillStyle = this.color;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
@@ -892,6 +1012,163 @@
             }
         }
 
+        // Custom sprite-like graphics functions
+        function drawCustomButton(x, y, width, height, text, isPressed = false) {
+            ctx.save();
+            
+            // Button shadow
+            const shadowOffset = isPressed ? 2 : 4;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillRect(x + shadowOffset, y + shadowOffset, width, height);
+            
+            // Button body with gradient
+            const gradient = ctx.createLinearGradient(x, y, x, y + height);
+            if (isPressed) {
+                gradient.addColorStop(0, '#E6B800');
+                gradient.addColorStop(1, '#FFD700');
+            } else {
+                gradient.addColorStop(0, '#FFD700');
+                gradient.addColorStop(0.5, '#FFA500');
+                gradient.addColorStop(1, '#FF8C00');
+            }
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, y, width, height);
+            
+            // Button border
+            ctx.strokeStyle = '#B8860B';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, width, height);
+            
+            // Button highlight
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x + 1, y + 1, width - 2, height - 2);
+            
+            // Button text
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, x + width/2, y + height/2 + (isPressed ? 1 : 0));
+            
+            ctx.restore();
+        }
+        
+        function drawCustomHeart(x, y, size, color = '#FF0000', beat = false) {
+            ctx.save();
+            ctx.translate(x, y);
+            
+            if (beat) {
+                const scale = 1 + Math.sin(frameCount * 0.3) * 0.1;
+                ctx.scale(scale, scale);
+            }
+            
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            
+            // Heart shape using curves
+            const heartSize = size * 0.5;
+            ctx.moveTo(0, heartSize * 0.3);
+            ctx.bezierCurveTo(-heartSize, -heartSize * 0.3, -heartSize, heartSize * 0.3, 0, heartSize);
+            ctx.bezierCurveTo(heartSize, heartSize * 0.3, heartSize, -heartSize * 0.3, 0, heartSize * 0.3);
+            ctx.fill();
+            
+            // Heart highlight
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.beginPath();
+            ctx.ellipse(-heartSize * 0.3, -heartSize * 0.1, heartSize * 0.2, heartSize * 0.15, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+        
+        function drawCustomStar(x, y, size, color = '#FFD700', twinkle = false) {
+            ctx.save();
+            ctx.translate(x, y);
+            
+            if (twinkle) {
+                const rotation = frameCount * 0.05;
+                ctx.rotate(rotation);
+                const scale = 0.8 + Math.sin(frameCount * 0.2) * 0.3;
+                ctx.scale(scale, scale);
+            }
+            
+            ctx.fillStyle = color;
+            
+            // 5-pointed star
+            const spikes = 5;
+            const outerRadius = size;
+            const innerRadius = size * 0.4;
+            
+            ctx.beginPath();
+            for (let i = 0; i < spikes; i++) {
+                const angle = (i * Math.PI * 2) / spikes - Math.PI / 2;
+                const x1 = Math.cos(angle) * outerRadius;
+                const y1 = Math.sin(angle) * outerRadius;
+                
+                if (i === 0) ctx.moveTo(x1, y1);
+                else ctx.lineTo(x1, y1);
+                
+                const innerAngle = angle + Math.PI / spikes;
+                const x2 = Math.cos(innerAngle) * innerRadius;
+                const y2 = Math.sin(innerAngle) * innerRadius;
+                ctx.lineTo(x2, y2);
+            }
+            ctx.closePath();
+            ctx.fill();
+            
+            // Star highlight
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.beginPath();
+            ctx.arc(0, -size * 0.2, size * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+        
+        function drawCustomBurger(x, y, size) {
+            ctx.save();
+            ctx.translate(x, y);
+            
+            const layers = [
+                { color: '#D2B48C', height: size * 0.15, type: 'bun' },
+                { color: '#90EE90', height: size * 0.08, type: 'lettuce' },
+                { color: '#FF6347', height: size * 0.08, type: 'tomato' },
+                { color: '#FFD700', height: size * 0.06, type: 'cheese' },
+                { color: '#8B4513', height: size * 0.2, type: 'patty' },
+                { color: '#DEB887', height: size * 0.15, type: 'bun' }
+            ];
+            
+            let currentY = size * 0.4;
+            
+            layers.forEach((layer, index) => {
+                ctx.fillStyle = layer.color;
+                
+                if (layer.type === 'bun') {
+                    // Rounded bun
+                    ctx.beginPath();
+                    ctx.ellipse(0, currentY, size * 0.4, layer.height, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Bun highlight
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                    ctx.beginPath();
+                    ctx.ellipse(0, currentY - layer.height * 0.3, size * 0.3, layer.height * 0.5, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    // Flat ingredients
+                    ctx.beginPath();
+                    ctx.ellipse(0, currentY, size * 0.35, layer.height, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                currentY -= layer.height * 1.5;
+            });
+            
+            ctx.restore();
+        }
+        
         function createFloatingText(x, y, text, color) {
             const div = document.createElement('div');
             div.className = 'floating-text';
@@ -936,6 +1213,126 @@
             flashColor = color;
             flashIntensity = intensity;
             flashDuration = duration;
+        }
+        
+        // Mobile vibration feedback
+        function vibrate(pattern) {
+            if ('vibrate' in navigator) {
+                navigator.vibrate(pattern);
+            }
+        }
+        
+        function vibrateSuccess() {
+            vibrate([50, 30, 50]); // Short-pause-short pattern for success
+        }
+        
+        function vibrateError() {
+            vibrate([100, 50, 100, 50, 100]); // Longer error pattern
+        }
+        
+        function vibrateCompletion() {
+            vibrate([30, 20, 50, 20, 80, 20, 100]); // Escalating celebration pattern
+        }
+        
+        function vibrateExpiration() {
+            vibrate([200]); // Single long vibration for order expiration
+        }
+        
+        // Canvas ImageData manipulation for special effects
+        let pixelEffects = {
+            glitchActive: false,
+            glitchIntensity: 0,
+            glitchDuration: 0,
+            rippleActive: false,
+            rippleX: 0,
+            rippleY: 0,
+            rippleRadius: 0,
+            rippleMaxRadius: 0
+        };
+        
+        function startGlitchEffect(intensity = 0.1, duration = 10) {
+            pixelEffects.glitchActive = true;
+            pixelEffects.glitchIntensity = intensity;
+            pixelEffects.glitchDuration = duration;
+        }
+        
+        function startRippleEffect(x, y, maxRadius = 100) {
+            pixelEffects.rippleActive = true;
+            pixelEffects.rippleX = x;
+            pixelEffects.rippleY = y;
+            pixelEffects.rippleRadius = 0;
+            pixelEffects.rippleMaxRadius = maxRadius;
+        }
+        
+        function applyPixelEffects() {
+            if (!pixelEffects.glitchActive && !pixelEffects.rippleActive) return;
+            
+            try {
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                
+                // Glitch effect
+                if (pixelEffects.glitchActive) {
+                    const intensity = pixelEffects.glitchIntensity;
+                    
+                    for (let i = 0; i < data.length; i += 4) {
+                        if (Math.random() < intensity) {
+                            // RGB channel shifting
+                            const shift = Math.floor(Math.random() * 20 - 10);
+                            const sourceIndex = Math.max(0, Math.min(data.length - 4, i + shift * 4));
+                            
+                            data[i] = data[sourceIndex]; // Red
+                            data[i + 1] = data[sourceIndex + 1]; // Green
+                            data[i + 2] = data[sourceIndex + 2]; // Blue
+                        }
+                        
+                        // Random noise
+                        if (Math.random() < intensity * 0.1) {
+                            data[i] = Math.random() * 255;
+                            data[i + 1] = Math.random() * 255;
+                            data[i + 2] = Math.random() * 255;
+                        }
+                    }
+                    
+                    pixelEffects.glitchDuration--;
+                    if (pixelEffects.glitchDuration <= 0) {
+                        pixelEffects.glitchActive = false;
+                    }
+                }
+                
+                // Ripple effect
+                if (pixelEffects.rippleActive) {
+                    const centerX = pixelEffects.rippleX;
+                    const centerY = pixelEffects.rippleY;
+                    const radius = pixelEffects.rippleRadius;
+                    
+                    for (let y = 0; y < canvas.height; y++) {
+                        for (let x = 0; x < canvas.width; x++) {
+                            const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+                            
+                            if (distance < radius && distance > radius - 20) {
+                                const index = (y * canvas.width + x) * 4;
+                                const wave = Math.sin(distance * 0.1 - frameCount * 0.3) * 0.5 + 0.5;
+                                
+                                // Color wave effect
+                                data[index] = Math.min(255, data[index] + wave * 50);     // Red
+                                data[index + 1] = Math.min(255, data[index + 1] + wave * 30); // Green
+                                data[index + 2] = Math.min(255, data[index + 2] + wave * 70); // Blue
+                            }
+                        }
+                    }
+                    
+                    pixelEffects.rippleRadius += 3;
+                    if (pixelEffects.rippleRadius > pixelEffects.rippleMaxRadius) {
+                        pixelEffects.rippleActive = false;
+                    }
+                }
+                
+                ctx.putImageData(imageData, 0, 0);
+            } catch (e) {
+                // Handle potential security errors with canvas data
+                console.log('Pixel effects not available in this context');
+            }
         }
 
         function updateScreenFlash() {
@@ -983,6 +1380,7 @@
                             
                             // Subtle green flash for correct ingredient
                             startScreenFlash('#00FF88', 0.15, 6);
+                            vibrateSuccess();
                             
                             // Create particles with dynamic colors
                             for (let j = 0; j < 10; j++) {
@@ -1003,6 +1401,8 @@
                             // Small celebration shake and flash
                             startScreenShake(4, 8);
                             startScreenFlash(colorTheme.primary, 0.3, 10);
+                            vibrateCompletion();
+                            startRippleEffect(order.x + order.width / 2, order.y + order.height / 2, 150);
                             
                             // Trigger score bounce animation
                             document.getElementById('score').classList.add('bounce');
@@ -1040,6 +1440,8 @@
                         // Screen shake and red flash for wrong ingredient
                         startScreenShake(8, 15);
                         startScreenFlash(colorTheme.warning, 0.4, 12);
+                        vibrateError();
+                        startGlitchEffect(0.15, 8);
                         
                         // Create error particles
                         for (let j = 0; j < 5; j++) {
@@ -1095,13 +1497,34 @@
             // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw enhanced kitchen background with gradients
+            // Draw enhanced kitchen background with textures
+            ctx.save();
+            
+            // Kitchen counter with wood texture
+            if (canvasPatterns.wood) {
+                ctx.fillStyle = canvasPatterns.wood;
+                ctx.globalAlpha = 0.6;
+                ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
+                ctx.globalAlpha = 1;
+            }
+            
+            // Add gradient overlay for depth
             const kitchenGradient = ctx.createLinearGradient(0, canvas.height - 100, 0, canvas.height);
-            kitchenGradient.addColorStop(0, 'rgba(139, 69, 19, 0.2)');
-            kitchenGradient.addColorStop(0.5, 'rgba(101, 67, 33, 0.3)');
-            kitchenGradient.addColorStop(1, 'rgba(83, 53, 27, 0.4)');
+            kitchenGradient.addColorStop(0, 'rgba(139, 69, 19, 0.3)');
+            kitchenGradient.addColorStop(0.5, 'rgba(101, 67, 33, 0.4)');
+            kitchenGradient.addColorStop(1, 'rgba(83, 53, 27, 0.5)');
             ctx.fillStyle = kitchenGradient;
             ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
+            
+            // Add subtle texture to the main game area
+            if (canvasPatterns.fabric) {
+                ctx.fillStyle = canvasPatterns.fabric;
+                ctx.globalAlpha = 0.05;
+                ctx.fillRect(0, 0, canvas.width, canvas.height - 100);
+                ctx.globalAlpha = 1;
+            }
+            
+            ctx.restore();
             
             // Add subtle depth shadows
             ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
@@ -1140,6 +1563,7 @@
                     // Screen shake and red flash for expired order
                     startScreenShake(12, 20);
                     startScreenFlash(colorTheme.warning, 0.5, 15);
+                    vibrateExpiration();
                     
                     // Trigger hearts shake animation
                     document.getElementById('lives').classList.add('shake');
@@ -1190,8 +1614,11 @@
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
 
-            // Draw screen flash overlay (must be last)
+            // Draw screen flash overlay
             drawScreenFlash();
+            
+            // Apply pixel effects (must be last)
+            applyPixelEffects();
 
             requestAnimationFrame(gameLoop);
         }
@@ -1212,6 +1639,11 @@
             
             // Reset color theme
             colorTheme.hue = 0;
+            
+            // Initialize patterns if not already done
+            if (!canvasPatterns.wood) {
+                initializePatterns();
+            }
 
             // Spawn initial orders
             for (let i = 0; i < 2; i++) {
