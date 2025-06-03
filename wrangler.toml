@@ -1,11 +1,3 @@
 name = "burger-drop"
 main = "src/worker.js"
 compatibility_date = "2025-06-03"
-
-[site]
-bucket = "./dist"
-
-[[rules]]
-type = "Text"
-globs = ["**/*.html"]
-fallthrough = true
