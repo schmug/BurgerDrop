@@ -270,6 +270,11 @@
         let shakeX = 0;
         let shakeY = 0;
         
+        // Screen flash variables
+        let flashIntensity = 0;
+        let flashColor = '#FFFFFF';
+        let flashDuration = 0;
+        
         // Try to load high score from localStorage (won't work in sandbox)
         try {
             highScore = localStorage.getItem('highScore') || 0;
@@ -594,6 +599,33 @@
             }
         }
 
+        // Screen flash functions
+        function startScreenFlash(color, intensity, duration) {
+            flashColor = color;
+            flashIntensity = intensity;
+            flashDuration = duration;
+        }
+
+        function updateScreenFlash() {
+            if (flashDuration > 0) {
+                flashDuration--;
+                // Gradually reduce intensity
+                flashIntensity *= 0.85;
+            } else {
+                flashIntensity = 0;
+            }
+        }
+
+        function drawScreenFlash() {
+            if (flashIntensity > 0.01) {
+                ctx.save();
+                ctx.globalAlpha = flashIntensity;
+                ctx.fillStyle = flashColor;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            }
+        }
+
         function handleTouch(e) {
             if (!gameRunning) return;
             
@@ -617,6 +649,9 @@
                             score += 10 * combo;
                             createFloatingText(x + rect.left, y + rect.top, `+${10 * combo}`, '#00FF00');
                             
+                            // Subtle green flash for correct ingredient
+                            startScreenFlash('#00FF88', 0.15, 6);
+                            
                             // Create particles
                             for (let j = 0; j < 10; j++) {
                                 particles.push(new Particle(ingredient.x + ingredient.data.size / 2, 
@@ -633,8 +668,9 @@
                             createFloatingText(x + rect.left, y + rect.top, 
                                              `ORDER COMPLETE! +${baseScore * combo}`, '#FFD700');
                             
-                            // Small celebration shake
+                            // Small celebration shake and flash
                             startScreenShake(4, 8);
+                            startScreenFlash('#FFD700', 0.3, 10);
                             
                             // Trigger score bounce animation
                             document.getElementById('score').classList.add('bounce');
@@ -666,8 +702,9 @@
                         combo = 1;
                         createFloatingText(x + rect.left, y + rect.top, 'WRONG!', '#FF0000');
                         
-                        // Screen shake for wrong ingredient
+                        // Screen shake and red flash for wrong ingredient
                         startScreenShake(8, 15);
+                        startScreenFlash('#FF4444', 0.4, 12);
                         
                         // Create error particles
                         for (let j = 0; j < 5; j++) {
@@ -717,8 +754,9 @@
 
             frameCount++;
             
-            // Update screen shake
+            // Update screen shake and flash
             updateScreenShake();
+            updateScreenFlash();
 
             // Spawn ingredients
             if (frameCount - lastSpawn > spawnRate) {
@@ -740,8 +778,9 @@
                     combo = 1;
                     createFloatingText(orders[i].x + 60, orders[i].y + 90, 'EXPIRED!', '#FF0000');
                     
-                    // Screen shake for expired order
+                    // Screen shake and red flash for expired order
                     startScreenShake(12, 20);
+                    startScreenFlash('#FF0000', 0.5, 15);
                     
                     // Trigger hearts shake animation
                     document.getElementById('lives').classList.add('shake');
@@ -785,6 +824,9 @@
                     particles.splice(i, 1);
                 }
             }
+
+            // Draw screen flash overlay (must be last)
+            drawScreenFlash();
 
             requestAnimationFrame(gameLoop);
         }
