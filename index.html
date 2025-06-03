@@ -264,6 +264,12 @@
         let spawnRate = 80;
         let lastSpawn = 0;
         
+        // Screen shake variables
+        let shakeIntensity = 0;
+        let shakeDuration = 0;
+        let shakeX = 0;
+        let shakeY = 0;
+        
         // Try to load high score from localStorage (won't work in sandbox)
         try {
             highScore = localStorage.getItem('highScore') || 0;
@@ -562,6 +568,32 @@
             setTimeout(() => div.remove(), 1000);
         }
 
+        // Screen shake functions
+        function startScreenShake(intensity, duration) {
+            shakeIntensity = intensity;
+            shakeDuration = duration;
+        }
+
+        function updateScreenShake() {
+            if (shakeDuration > 0) {
+                shakeDuration--;
+                shakeX = (Math.random() - 0.5) * shakeIntensity;
+                shakeY = (Math.random() - 0.5) * shakeIntensity;
+                
+                // Apply shake to canvas
+                canvas.style.transform = `translate(${shakeX}px, ${shakeY}px)`;
+                
+                // Gradually reduce intensity
+                shakeIntensity *= 0.9;
+            } else {
+                // Reset shake
+                shakeIntensity = 0;
+                shakeX = 0;
+                shakeY = 0;
+                canvas.style.transform = 'translate(0px, 0px)';
+            }
+        }
+
         function handleTouch(e) {
             if (!gameRunning) return;
             
@@ -601,6 +633,15 @@
                             createFloatingText(x + rect.left, y + rect.top, 
                                              `ORDER COMPLETE! +${baseScore * combo}`, '#FFD700');
                             
+                            // Small celebration shake
+                            startScreenShake(4, 8);
+                            
+                            // Trigger score bounce animation
+                            document.getElementById('score').classList.add('bounce');
+                            setTimeout(() => {
+                                document.getElementById('score').classList.remove('bounce');
+                            }, 400);
+                            
                             // Update combo after scoring
                             combo = Math.min(combo + 1, 10);
                             
@@ -612,7 +653,7 @@
                             for (let j = 0; j < 20; j++) {
                                 particles.push(new Particle(order.x + order.width / 2, 
                                                            order.y + order.height / 2, 
-                                                           '#FFD700', '✨'));
+                                                           '#FFD700', '✨', 'celebration'));
                             }
                             
                             // Spawn new order
@@ -624,6 +665,9 @@
                     if (!correctOrder) {
                         combo = 1;
                         createFloatingText(x + rect.left, y + rect.top, 'WRONG!', '#FF0000');
+                        
+                        // Screen shake for wrong ingredient
+                        startScreenShake(8, 15);
                         
                         // Create error particles
                         for (let j = 0; j < 5; j++) {
@@ -672,6 +716,9 @@
             ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
 
             frameCount++;
+            
+            // Update screen shake
+            updateScreenShake();
 
             // Spawn ingredients
             if (frameCount - lastSpawn > spawnRate) {
@@ -692,6 +739,16 @@
                     lives--;
                     combo = 1;
                     createFloatingText(orders[i].x + 60, orders[i].y + 90, 'EXPIRED!', '#FF0000');
+                    
+                    // Screen shake for expired order
+                    startScreenShake(12, 20);
+                    
+                    // Trigger hearts shake animation
+                    document.getElementById('lives').classList.add('shake');
+                    setTimeout(() => {
+                        document.getElementById('lives').classList.remove('shake');
+                    }, 500);
+                    
                     orders.splice(i, 1);
                     
                     if (lives <= 0) {
