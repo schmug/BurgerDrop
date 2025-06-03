@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Order Up! - Restaurant Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to bottom, #87CEEB, #98D8C8);
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+
+        #gameCanvas {
+            background: linear-gradient(to bottom, #FFE4B5, #FFDEAD);
+            display: block;
+            margin: 0 auto;
+            border: 3px solid #8B4513;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            pointer-events: none;
+        }
+
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.5);
+        }
+
+        #combo {
+            position: absolute;
+            top: 40px;
+            left: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #FF6347;
+            text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.5);
+            transition: transform 0.3s;
+        }
+
+        #combo.pulse {
+            transform: scale(1.2);
+        }
+
+        #lives {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+        }
+
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            pointer-events: auto;
+        }
+
+        #gameOver h2 {
+            font-size: 36px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        #gameOver button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s;
+        }
+
+        #gameOver button:active {
+            transform: scale(0.95);
+        }
+
+        .floating-text {
+            position: absolute;
+            font-weight: bold;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+        }
+
+        @keyframes floatUp {
+            to {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+        }
+
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            z-index: 100;
+        }
+
+        #startScreen h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        #startScreen p {
+            font-size: 20px;
+            margin-bottom: 40px;
+            max-width: 300px;
+        }
+
+        #startScreen button {
+            background: #FFD700;
+            color: #333;
+            border: none;
+            padding: 15px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s;
+        }
+
+        #startScreen button:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="ui">
+        <div id="score">Score: 0</div>
+        <div id="combo">Combo: x1</div>
+        <div id="lives">❤️❤️❤️</div>
+        
+        <div id="gameOver">
+            <h2>Game Over!</h2>
+            <p id="finalScore">Final Score: 0</p>
+            <p id="highScore">High Score: 0</p>
+            <button onclick="restartGame()">Play Again</button>
+        </div>
+    </div>
+
+    <div id="startScreen">
+        <h1>🍔 Order Up! 🍔</h1>
+        <p>Tap falling ingredients to complete customer orders!</p>
+        <button onclick="startGame()">Start Game</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size
+        function resizeCanvas() {
+            canvas.width = Math.min(window.innerWidth, 480);
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Game state
+        let gameRunning = false;
+        let score = 0;
+        let highScore = 0;
+        let combo = 1;
+        let lives = 3;
+        let ingredients = [];
+        let orders = [];
+        let particles = [];
+        let frameCount = 0;
+        let ingredientSpeed = 2;
+        let spawnRate = 80;
+        let lastSpawn = 0;
+        
+        // Try to load high score from localStorage (won't work in sandbox)
+        try {
+            highScore = localStorage.getItem('highScore') || 0;
+        } catch (e) {
+            // localStorage not available in sandbox
+            highScore = 0;
+        }
+
+        // Ingredient types with emojis
+        const ingredientTypes = {
+            bun_top: { emoji: '🍞', name: 'Top Bun', size: 40 },
+            bun_bottom: { emoji: '🥖', name: 'Bottom Bun', size: 40 },
+            patty: { emoji: '🥩', name: 'Patty', size: 45 },
+            cheese: { emoji: '🧀', name: 'Cheese', size: 35 },
+            lettuce: { emoji: '🥬', name: 'Lettuce', size: 35 },
+            tomato: { emoji: '🍅', name: 'Tomato', size: 35 },
+            pickle: { emoji: '🥒', name: 'Pickle', size: 30 },
+            bacon: { emoji: '🥓', name: 'Bacon', size: 35 },
+            onion: { emoji: '🧅', name: 'Onion', size: 30 },
+            egg: { emoji: '🍳', name: 'Egg', size: 40 }
+        };
+
+        // Order templates
+        const orderTemplates = [
+            { name: 'Classic Burger', ingredients: ['bun_bottom', 'patty', 'cheese', 'lettuce', 'tomato', 'bun_top'], time: 30 },
+            { name: 'Simple Burger', ingredients: ['bun_bottom', 'patty', 'bun_top'], time: 20 },
+            { name: 'Cheese Burger', ingredients: ['bun_bottom', 'patty', 'cheese', 'bun_top'], time: 25 },
+            { name: 'Veggie Burger', ingredients: ['bun_bottom', 'lettuce', 'tomato', 'onion', 'pickle', 'bun_top'], time: 30 },
+            { name: 'Bacon Burger', ingredients: ['bun_bottom', 'patty', 'bacon', 'cheese', 'bun_top'], time: 35 },
+            { name: 'Breakfast Burger', ingredients: ['bun_bottom', 'patty', 'egg', 'bacon', 'cheese', 'bun_top'], time: 40 }
+        ];
+
+        class Ingredient {
+            constructor(type) {
+                this.type = type;
+                this.data = ingredientTypes[type];
+                this.x = Math.random() * (canvas.width - this.data.size);
+                this.y = -this.data.size;
+                this.speed = ingredientSpeed + Math.random();
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.1;
+                this.collected = false;
+            }
+
+            update() {
+                this.y += this.speed;
+                this.rotation += this.rotationSpeed;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x + this.data.size / 2, this.y + this.data.size / 2);
+                ctx.rotate(this.rotation);
+                ctx.font = `${this.data.size}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.data.emoji, 0, 0);
+                ctx.restore();
+            }
+
+            isClicked(x, y) {
+                return x >= this.x && x <= this.x + this.data.size &&
+                       y >= this.y && y <= this.y + this.data.size;
+            }
+        }
+
+        class Order {
+            constructor(template) {
+                this.template = template;
+                this.ingredients = [...template.ingredients];
+                this.currentIndex = 0;
+                this.timeLeft = template.time * 1000;
+                this.x = 0;
+                this.y = 0;
+                this.width = 120;
+                this.height = 180;
+                this.completed = false;
+            }
+
+            update(deltaTime) {
+                this.timeLeft -= deltaTime;
+                if (this.timeLeft <= 0 && !this.completed) {
+                    return false; // Order expired
+                }
+                return true;
+            }
+
+            draw(index) {
+                const margin = 10;
+                this.x = margin + index * (this.width + margin);
+                this.y = 80;
+
+                // Order background
+                ctx.fillStyle = this.timeLeft < 10000 ? 'rgba(255, 100, 100, 0.9)' : 'rgba(255, 255, 255, 0.9)';
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(this.x, this.y, this.width, this.height);
+
+                // Order name
+                ctx.fillStyle = '#333';
+                ctx.font = 'bold 12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(this.template.name, this.x + this.width / 2, this.y + 15);
+
+                // Timer
+                const timeSeconds = Math.ceil(this.timeLeft / 1000);
+                ctx.fillStyle = this.timeLeft < 10000 ? '#FF0000' : '#333';
+                ctx.font = 'bold 14px Arial';
+                ctx.fillText(`${timeSeconds}s`, this.x + this.width / 2, this.y + 30);
+
+                // Ingredients (from bottom to top)
+                const startY = this.y + this.height - 25;
+                const spacing = 20;
+                
+                for (let i = 0; i < this.ingredients.length; i++) {
+                    const ingredient = ingredientTypes[this.ingredients[i]];
+                    const yPos = startY - (i * spacing);
+                    
+                    ctx.save();
+                    if (i < this.currentIndex) {
+                        ctx.globalAlpha = 0.3; // Completed ingredients
+                    } else if (i === this.currentIndex) {
+                        // Highlight current ingredient
+                        ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+                        ctx.fillRect(this.x + 5, yPos - 15, this.width - 10, 25);
+                    }
+                    
+                    ctx.font = '20px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(ingredient.emoji, this.x + this.width / 2, yPos);
+                    ctx.restore();
+                }
+            }
+
+            checkIngredient(type) {
+                if (this.currentIndex < this.ingredients.length && 
+                    this.ingredients[this.currentIndex] === type) {
+                    this.currentIndex++;
+                    if (this.currentIndex >= this.ingredients.length) {
+                        this.completed = true;
+                        return 'completed';
+                    }
+                    return 'correct';
+                }
+                return 'wrong';
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color, text = '') {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = -Math.random() * 4 - 2;
+                this.color = color;
+                this.text = text;
+                this.life = 1;
+                this.decay = 0.02;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.2;
+                this.life -= this.decay;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                if (this.text) {
+                    ctx.font = 'bold 24px Arial';
+                    ctx.fillStyle = this.color;
+                    ctx.textAlign = 'center';
+                    ctx.fillText(this.text, this.x, this.y);
+                } else {
+                    ctx.fillStyle = this.color;
+                    ctx.fillRect(this.x - 2, this.y - 2, 4, 4);
+                }
+                ctx.restore();
+            }
+        }
+
+        function spawnIngredient() {
+            // Get all possible ingredients from current orders
+            const possibleTypes = new Set();
+            orders.forEach(order => {
+                if (order.currentIndex < order.ingredients.length) {
+                    possibleTypes.add(order.ingredients[order.currentIndex]);
+                    // Add some random ingredients for challenge
+                    const randomType = Object.keys(ingredientTypes)[Math.floor(Math.random() * Object.keys(ingredientTypes).length)];
+                    possibleTypes.add(randomType);
+                }
+            });
+
+            if (possibleTypes.size > 0) {
+                const typesArray = Array.from(possibleTypes);
+                const type = typesArray[Math.floor(Math.random() * typesArray.length)];
+                ingredients.push(new Ingredient(type));
+            }
+        }
+
+        function spawnOrder() {
+            if (orders.length < 3) {
+                const template = orderTemplates[Math.floor(Math.random() * orderTemplates.length)];
+                orders.push(new Order(template));
+            }
+        }
+
+        function createFloatingText(x, y, text, color) {
+            const div = document.createElement('div');
+            div.className = 'floating-text';
+            div.style.left = x + 'px';
+            div.style.top = y + 'px';
+            div.style.color = color;
+            div.style.fontSize = '24px';
+            div.textContent = text;
+            document.body.appendChild(div);
+            
+            setTimeout(() => div.remove(), 1000);
+        }
+
+        function handleTouch(e) {
+            if (!gameRunning) return;
+            
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+            const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+
+            // Check ingredient taps
+            for (let i = ingredients.length - 1; i >= 0; i--) {
+                const ingredient = ingredients[i];
+                if (ingredient.isClicked(x, y) && !ingredient.collected) {
+                    ingredient.collected = true;
+                    
+                    // Check against orders
+                    let correctOrder = false;
+                    for (let order of orders) {
+                        const result = order.checkIngredient(ingredient.type);
+                        if (result === 'correct') {
+                            correctOrder = true;
+                            score += 10 * combo;
+                            createFloatingText(x + rect.left, y + rect.top, `+${10 * combo}`, '#00FF00');
+                            
+                            // Create particles
+                            for (let j = 0; j < 10; j++) {
+                                particles.push(new Particle(ingredient.x + ingredient.data.size / 2, 
+                                                           ingredient.y + ingredient.data.size / 2, 
+                                                           '#FFD700'));
+                            }
+                            break;
+                        } else if (result === 'completed') {
+                            correctOrder = true;
+                            const bonus = Math.floor(order.timeLeft / 1000) * 5;
+                            const baseScore = 50 + bonus;
+                            score += baseScore * combo;
+                            
+                            createFloatingText(x + rect.left, y + rect.top, 
+                                             `ORDER COMPLETE! +${baseScore * combo}`, '#FFD700');
+                            
+                            // Update combo after scoring
+                            combo = Math.min(combo + 1, 10);
+                            
+                            // Remove completed order
+                            const orderIndex = orders.indexOf(order);
+                            orders.splice(orderIndex, 1);
+                            
+                            // Create celebration particles
+                            for (let j = 0; j < 20; j++) {
+                                particles.push(new Particle(order.x + order.width / 2, 
+                                                           order.y + order.height / 2, 
+                                                           '#FFD700', '✨'));
+                            }
+                            
+                            // Spawn new order
+                            setTimeout(spawnOrder, 1000);
+                            break;
+                        }
+                    }
+                    
+                    if (!correctOrder) {
+                        combo = 1;
+                        createFloatingText(x + rect.left, y + rect.top, 'WRONG!', '#FF0000');
+                        
+                        // Create error particles
+                        for (let j = 0; j < 5; j++) {
+                            particles.push(new Particle(ingredient.x + ingredient.data.size / 2, 
+                                                       ingredient.y + ingredient.data.size / 2, 
+                                                       '#FF0000'));
+                        }
+                    }
+                    
+                    ingredients.splice(i, 1);
+                    updateUI();
+                    break;
+                }
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('score').textContent = `Score: ${score}`;
+            document.getElementById('combo').textContent = `Combo: x${combo}`;
+            
+            const comboElement = document.getElementById('combo');
+            comboElement.classList.remove('pulse');
+            void comboElement.offsetWidth; // Force reflow
+            if (combo > 1) {
+                comboElement.classList.add('pulse');
+            }
+            
+            let heartsHTML = '';
+            for (let i = 0; i < lives; i++) {
+                heartsHTML += '❤️';
+            }
+            document.getElementById('lives').textContent = heartsHTML;
+        }
+
+        function gameLoop(currentTime) {
+            if (!gameRunning) return;
+
+            const deltaTime = currentTime - (window.lastTime || currentTime);
+            window.lastTime = currentTime;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw kitchen background elements
+            ctx.fillStyle = 'rgba(139, 69, 19, 0.1)';
+            ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
+
+            frameCount++;
+
+            // Spawn ingredients
+            if (frameCount - lastSpawn > spawnRate) {
+                spawnIngredient();
+                lastSpawn = frameCount;
+                
+                // Increase difficulty
+                if (frameCount % 500 === 0) {
+                    ingredientSpeed = Math.min(ingredientSpeed + 0.1, 5);
+                    spawnRate = Math.max(spawnRate - 2, 40);
+                }
+            }
+
+            // Update and draw orders
+            for (let i = orders.length - 1; i >= 0; i--) {
+                if (!orders[i].update(deltaTime)) {
+                    // Order expired
+                    lives--;
+                    combo = 1;
+                    createFloatingText(orders[i].x + 60, orders[i].y + 90, 'EXPIRED!', '#FF0000');
+                    orders.splice(i, 1);
+                    
+                    if (lives <= 0) {
+                        endGame();
+                        return;
+                    }
+                    
+                    setTimeout(spawnOrder, 1000);
+                    updateUI();
+                }
+            }
+
+            orders.forEach((order, index) => order.draw(index));
+
+            // Update and draw ingredients
+            for (let i = ingredients.length - 1; i >= 0; i--) {
+                const ingredient = ingredients[i];
+                ingredient.update();
+                ingredient.draw();
+
+                // Remove ingredients that fall off screen
+                if (ingredient.y > canvas.height) {
+                    ingredients.splice(i, 1);
+                }
+            }
+
+            // Update and draw particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const particle = particles[i];
+                particle.update();
+                particle.draw();
+
+                if (particle.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            gameRunning = true;
+            score = 0;
+            combo = 1;
+            lives = 3;
+            ingredients = [];
+            orders = [];
+            particles = [];
+            frameCount = 0;
+            ingredientSpeed = 2;
+            spawnRate = 80;
+            lastSpawn = 0;
+
+            // Spawn initial orders
+            for (let i = 0; i < 2; i++) {
+                setTimeout(() => spawnOrder(), i * 500);
+            }
+
+            updateUI();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function endGame() {
+            gameRunning = false;
+            
+            if (score > highScore) {
+                highScore = score;
+                try {
+                    localStorage.setItem('highScore', highScore);
+                } catch (e) {
+                    // localStorage not available in sandbox
+                }
+            }
+
+            document.getElementById('finalScore').textContent = `Final Score: ${score}`;
+            document.getElementById('highScore').textContent = `High Score: ${highScore}`;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+
+        function restartGame() {
+            document.getElementById('gameOver').style.display = 'none';
+            startGame();
+        }
+
+        // Event listeners
+        canvas.addEventListener('touchstart', handleTouch, { passive: false });
+        canvas.addEventListener('mousedown', handleTouch);
+
+        // Prevent scrolling on mobile
+        document.body.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+    </script>
+</body>
+</html>
