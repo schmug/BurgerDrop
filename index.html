@@ -145,6 +145,32 @@
             font-size: 12px;
             opacity: 0.8;
         }
+        
+        #audioToggle {
+            position: absolute;
+            top: 10px;
+            right: 50px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: 2px solid #FFD700;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            pointer-events: auto;
+        }
+        
+        #audioToggle:hover {
+            background: rgba(255, 215, 0, 0.2);
+            transform: scale(1.1);
+        }
+        
+        #audioToggle.muted {
+            opacity: 0.5;
+            border-color: #999;
+        }
 
         #score.bounce {
             animation: scoreBounce 0.4s ease-out;
@@ -324,19 +350,20 @@
         <div id="combo">Combo: x1</div>
         <div id="lives">❤️❤️❤️</div>
         <div id="powerUpStatus"></div>
+        <button id="audioToggle" onclick="toggleAudio()" title="Toggle Audio">🔊</button>
         
         <div id="gameOver">
             <h2>Game Over!</h2>
             <p id="finalScore">Final Score: 0</p>
             <p id="highScore">High Score: 0</p>
-            <button onclick="restartGame()">Play Again</button>
+            <button onclick="playButtonClick(); restartGame()">Play Again</button>
         </div>
     </div>
 
     <div id="startScreen">
         <h1>🍔 Burger Drop! 🍔</h1>
         <p>Tap falling ingredients to complete customer orders!</p>
-        <button onclick="startGame()">Start Game</button>
+        <button onclick="playButtonClick(); startGame()">Start Game</button>
     </div>
 
     <script>
@@ -648,6 +675,9 @@
                     break;
             }
             
+            // Audio feedback
+            playPowerUpActivate(type);
+            
             // Visual feedback
             startScreenFlash(powerUpData.color, 0.2, 8);
             vibrateSuccess();
@@ -711,6 +741,9 @@
             // localStorage not available in sandbox
             highScore = 0;
         }
+        
+        // Initialize audio system
+        initAudio();
 
         // Enhanced ingredient types with multiple emoji variations
         const ingredientTypes = {
@@ -1464,6 +1497,312 @@
             vibrate([200]); // Single long vibration for order expiration
         }
         
+        // Audio system using Web Audio API for procedural sound generation
+        let audioContext = null;
+        let audioEnabled = true;
+        let masterVolume = 0.3;
+        
+        function initAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Resume audio context on first user interaction (required by browsers)
+                document.addEventListener('click', resumeAudio, { once: true });
+                document.addEventListener('touchstart', resumeAudio, { once: true });
+            } catch (e) {
+                console.log('Web Audio API not supported');
+                audioEnabled = false;
+            }
+        }
+        
+        function resumeAudio() {
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }
+        
+        function createOscillator(frequency, type = 'sine', duration = 0.1) {
+            if (!audioContext || !audioEnabled) return null;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.type = type;
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(masterVolume * 0.3, audioContext.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+            
+            return { oscillator, gainNode, duration };
+        }
+        
+        function playSound(soundConfig) {
+            if (!audioContext || !audioEnabled) return;
+            
+            const { oscillator, gainNode, duration } = createOscillator(
+                soundConfig.frequency, 
+                soundConfig.type, 
+                soundConfig.duration
+            );
+            
+            if (!oscillator) return;
+            
+            // Apply any frequency modulation
+            if (soundConfig.frequencyEnd) {
+                oscillator.frequency.exponentialRampToValueAtTime(
+                    soundConfig.frequencyEnd, 
+                    audioContext.currentTime + duration
+                );
+            }
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+        
+        function playChord(frequencies, type = 'sine', duration = 0.2) {
+            frequencies.forEach((freq, index) => {
+                setTimeout(() => {
+                    playSound({ frequency: freq, type, duration: duration * 0.8 });
+                }, index * 50);
+            });
+        }
+        
+        // Sound effect definitions
+        const soundEffects = {
+            ingredientCorrect: {
+                frequency: 440,
+                frequencyEnd: 660,
+                type: 'sine',
+                duration: 0.15
+            },
+            orderComplete: {
+                // Play as chord
+                frequencies: [523, 659, 784], // C5, E5, G5
+                type: 'triangle',
+                duration: 0.4
+            },
+            powerUpCollect: {
+                frequency: 880,
+                frequencyEnd: 1320,
+                type: 'square',
+                duration: 0.3
+            },
+            speedBoostActivate: {
+                frequencies: [440, 554, 659], // A4, C#5, E5
+                type: 'sawtooth',
+                duration: 0.2
+            },
+            timeFreezeActivate: {
+                frequency: 200,
+                frequencyEnd: 100,
+                type: 'sine',
+                duration: 0.5
+            },
+            scoreMultiplierActivate: {
+                frequencies: [523, 659, 784, 1047], // C5, E5, G5, C6
+                type: 'triangle',
+                duration: 0.25
+            },
+            ingredientWrong: {
+                frequency: 150,
+                frequencyEnd: 80,
+                type: 'square',
+                duration: 0.3
+            },
+            orderExpired: {
+                frequency: 100,
+                frequencyEnd: 60,
+                type: 'sawtooth',
+                duration: 0.6
+            },
+            gameOver: {
+                frequencies: [440, 415, 392, 370], // Descending sad melody
+                type: 'triangle',
+                duration: 0.8
+            },
+            buttonClick: {
+                frequency: 800,
+                type: 'square',
+                duration: 0.05
+            },
+            comboIncrease: {
+                frequency: 659,
+                frequencyEnd: 880,
+                type: 'sine',
+                duration: 0.2
+            }
+        };
+        
+        // Audio helper functions
+        function playIngredientCorrect() {
+            playSound(soundEffects.ingredientCorrect);
+        }
+        
+        function playOrderComplete() {
+            playChord(
+                soundEffects.orderComplete.frequencies, 
+                soundEffects.orderComplete.type, 
+                soundEffects.orderComplete.duration
+            );
+        }
+        
+        function playPowerUpCollect() {
+            playSound(soundEffects.powerUpCollect);
+        }
+        
+        function playPowerUpActivate(type) {
+            const sound = soundEffects[type + 'Activate'];
+            if (sound.frequencies) {
+                playChord(sound.frequencies, sound.type, sound.duration);
+            } else {
+                playSound(sound);
+            }
+        }
+        
+        function playIngredientWrong() {
+            playSound(soundEffects.ingredientWrong);
+        }
+        
+        function playOrderExpired() {
+            playSound(soundEffects.orderExpired);
+        }
+        
+        function playGameOver() {
+            // Play descending melody
+            soundEffects.gameOver.frequencies.forEach((freq, index) => {
+                setTimeout(() => {
+                    playSound({ 
+                        frequency: freq, 
+                        type: soundEffects.gameOver.type, 
+                        duration: soundEffects.gameOver.duration * 0.7 
+                    });
+                }, index * 200);
+            });
+        }
+        
+        function playButtonClick() {
+            playSound(soundEffects.buttonClick);
+        }
+        
+        function playComboIncrease() {
+            playSound(soundEffects.comboIncrease);
+        }
+        
+        // Background music system
+        let backgroundMusic = {
+            playing: false,
+            oscillators: [],
+            gainNodes: []
+        };
+        
+        const musicNotes = {
+            // Simple pentatonic scale for pleasant background music
+            melody: [523, 587, 659, 784, 880], // C5, D5, E5, G5, A5
+            bass: [131, 147, 165, 196, 220]    // C3, D3, E3, G3, A3
+        };
+        
+        function startBackgroundMusic() {
+            if (!audioContext || !audioEnabled || backgroundMusic.playing) return;
+            
+            backgroundMusic.playing = true;
+            playMelodyLoop();
+        }
+        
+        function stopBackgroundMusic() {
+            backgroundMusic.playing = false;
+            backgroundMusic.oscillators.forEach(osc => {
+                try {
+                    osc.stop();
+                } catch (e) {
+                    // Oscillator might already be stopped
+                }
+            });
+            backgroundMusic.oscillators = [];
+            backgroundMusic.gainNodes = [];
+        }
+        
+        function playMelodyLoop() {
+            if (!backgroundMusic.playing) return;
+            
+            const noteIndex = Math.floor(Math.random() * musicNotes.melody.length);
+            const frequency = musicNotes.melody[noteIndex];
+            const bassFreq = musicNotes.bass[noteIndex];
+            
+            // Play melody note
+            const melodyOsc = audioContext.createOscillator();
+            const melodyGain = audioContext.createGain();
+            
+            melodyOsc.connect(melodyGain);
+            melodyGain.connect(audioContext.destination);
+            
+            melodyOsc.type = 'triangle';
+            melodyOsc.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            
+            melodyGain.gain.setValueAtTime(0, audioContext.currentTime);
+            melodyGain.gain.linearRampToValueAtTime(masterVolume * 0.1, audioContext.currentTime + 0.1);
+            melodyGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 2);
+            
+            melodyOsc.start();
+            melodyOsc.stop(audioContext.currentTime + 2);
+            
+            backgroundMusic.oscillators.push(melodyOsc);
+            backgroundMusic.gainNodes.push(melodyGain);
+            
+            // Occasionally play bass note
+            if (Math.random() < 0.3) {
+                setTimeout(() => {
+                    const bassOsc = audioContext.createOscillator();
+                    const bassGain = audioContext.createGain();
+                    
+                    bassOsc.connect(bassGain);
+                    bassGain.connect(audioContext.destination);
+                    
+                    bassOsc.type = 'sine';
+                    bassOsc.frequency.setValueAtTime(bassFreq, audioContext.currentTime);
+                    
+                    bassGain.gain.setValueAtTime(0, audioContext.currentTime);
+                    bassGain.gain.linearRampToValueAtTime(masterVolume * 0.05, audioContext.currentTime + 0.1);
+                    bassGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1.5);
+                    
+                    bassOsc.start();
+                    bassOsc.stop(audioContext.currentTime + 1.5);
+                    
+                    backgroundMusic.oscillators.push(bassOsc);
+                    backgroundMusic.gainNodes.push(bassGain);
+                }, 500);
+            }
+            
+            // Schedule next note
+            const nextNoteDelay = 2000 + Math.random() * 3000; // 2-5 seconds
+            setTimeout(playMelodyLoop, nextNoteDelay);
+        }
+        
+        // Audio toggle function
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            const button = document.getElementById('audioToggle');
+            
+            if (audioEnabled) {
+                button.textContent = '🔊';
+                button.classList.remove('muted');
+                button.title = 'Mute Audio';
+                if (gameRunning) {
+                    startBackgroundMusic();
+                }
+            } else {
+                button.textContent = '🔇';
+                button.classList.add('muted');
+                button.title = 'Unmute Audio';
+                stopBackgroundMusic();
+            }
+            
+            playButtonClick();
+        }
+        
         // Canvas ImageData manipulation for special effects
         let pixelEffects = {
             glitchActive: false,
@@ -1594,6 +1933,7 @@
                 const powerUp = powerUps[i];
                 if (powerUp.isClicked(x, y) && !powerUp.collected) {
                     powerUp.collected = true;
+                    playPowerUpCollect();
                     activatePowerUp(powerUp.type);
                     createFloatingText(x + rect.left, y + rect.top, 
                         powerUp.data.name + '!', powerUp.data.color);
@@ -1627,6 +1967,7 @@
                             // Subtle green flash for correct ingredient
                             startScreenFlash('#00FF88', 0.15, 6);
                             vibrateSuccess();
+                            playIngredientCorrect();
                             
                             // Create particles with dynamic colors
                             for (let j = 0; j < 10; j++) {
@@ -1656,6 +1997,7 @@
                             startScreenFlash(colorTheme.primary, 0.3, 10);
                             vibrateCompletion();
                             startRippleEffect(order.x + order.width / 2, order.y + order.height / 2, 150);
+                            playOrderComplete();
                             
                             // Trigger score bounce animation
                             document.getElementById('score').classList.add('bounce');
@@ -1664,7 +2006,13 @@
                             }, 400);
                             
                             // Update combo after scoring
+                            const oldCombo = combo;
                             combo = Math.min(combo + 1, 10);
+                            
+                            // Play combo sound if combo increased
+                            if (combo > oldCombo) {
+                                playComboIncrease();
+                            }
                             
                             // Remove completed order
                             const orderIndex = orders.indexOf(order);
@@ -1695,6 +2043,7 @@
                         startScreenFlash(colorTheme.warning, 0.4, 12);
                         vibrateError();
                         startGlitchEffect(0.15, 8);
+                        playIngredientWrong();
                         
                         // Create error particles
                         for (let j = 0; j < 5; j++) {
@@ -1849,6 +2198,7 @@
                     startScreenShake(12, 20);
                     startScreenFlash(colorTheme.warning, 0.5, 15);
                     vibrateExpiration();
+                    playOrderExpired();
                     
                     // Trigger hearts shake animation
                     document.getElementById('lives').classList.add('shake');
@@ -1949,6 +2299,11 @@
             if (!canvasPatterns.wood) {
                 initializePatterns();
             }
+            
+            // Start background music
+            if (audioEnabled) {
+                startBackgroundMusic();
+            }
 
             // Spawn initial orders
             for (let i = 0; i < 2; i++) {
@@ -1961,6 +2316,12 @@
 
         function endGame() {
             gameRunning = false;
+            
+            // Stop background music
+            stopBackgroundMusic();
+            
+            // Play game over sound
+            playGameOver();
             
             if (score > highScore) {
                 highScore = score;
