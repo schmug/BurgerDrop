@@ -12,7 +12,7 @@ async function handleRequest(request) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Order Up! - Restaurant Game</title>
+    <title>Burger Drop! - Restaurant Game</title>
     <style>
         * {
             margin: 0;
@@ -194,7 +194,7 @@ async function handleRequest(request) {
     </div>
 
     <div id="startScreen">
-        <h1>🍔 Order Up! 🍔</h1>
+        <h1>🍔 Burger Drop! 🍔</h1>
         <p>Tap falling ingredients to complete customer orders!</p>
         <button onclick="startGame()">Start Game</button>
     </div>
