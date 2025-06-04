@@ -526,8 +526,8 @@ async function handleRequest(request) {
         let particles = [];
         let powerUps = [];
         let frameCount = 0;
-        let ingredientSpeed = 2;
-        let spawnRate = 80;
+        let ingredientSpeed = 4;
+        let spawnRate = 70;
         let lastSpawn = 0;
         let lastPowerUpSpawn = 0;
         
@@ -604,44 +604,29 @@ async function handleRequest(request) {
             
             draw() {
                 ctx.save();
-                
-                // Pulsing glow effect
-                const pulse = Math.sin(this.pulsePhase) * 0.3 + 0.7;
-                const glowSize = this.size * pulse;
-                
-                // Outer glow
-                const gradient = ctx.createRadialGradient(
-                    this.x + this.size/2, this.y + this.size/2, 0,
-                    this.x + this.size/2, this.y + this.size/2, glowSize
-                );
-                gradient.addColorStop(0, this.data.color + '80');
-                gradient.addColorStop(0.5, this.data.color + '40');
-                gradient.addColorStop(1, this.data.color + '00');
-                
-                ctx.fillStyle = gradient;
-                ctx.fillRect(
-                    this.x - glowSize/2 + this.size/2, 
-                    this.y - glowSize/2 + this.size/2, 
-                    glowSize, glowSize
-                );
-                
-                // Main power-up
                 ctx.translate(this.x + this.size/2, this.y + this.size/2);
-                ctx.rotate(this.rotation);
                 
-                // Background circle
+                // Simplified pulsing effect (reduced calculation)
+                const pulse = Math.sin(this.pulsePhase) * 0.15 + 0.85;
+                const currentSize = this.size * pulse;
+                
+                // Simplified background (removed expensive gradient)
                 ctx.fillStyle = this.data.color;
                 ctx.beginPath();
-                ctx.arc(0, 0, this.size/2, 0, Math.PI * 2);
+                ctx.arc(0, 0, currentSize/2, 0, Math.PI * 2);
                 ctx.fill();
                 
-                // Border
+                // Simple border
                 ctx.strokeStyle = '#FFFFFF';
-                ctx.lineWidth = 3;
+                ctx.lineWidth = 2;
                 ctx.stroke();
                 
-                // Emoji
-                ctx.font = \`\${this.size * 0.6}px Arial\`;
+                // Emoji (cached font setting)
+                if (!this.cachedFontSize || this.cachedFontSize !== currentSize) {
+                    this.cachedFontSize = currentSize;
+                    this.cachedFont = \`\${currentSize * 0.6}px Arial\`;
+                }
+                ctx.font = this.cachedFont;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillStyle = '#FFFFFF';
@@ -819,8 +804,8 @@ async function handleRequest(request) {
             startScreenFlash(powerUpData.color, 0.2, 8);
             vibrateSuccess();
             
-            // Create celebration particles
-            for (let i = 0; i < 15; i++) {
+            // Create celebration particles (reduced count)
+            for (let i = 0; i < 8; i++) {
                 particles.push(new Particle(
                     canvas.width/2 + (Math.random() - 0.5) * 100,
                     canvas.height/2 + (Math.random() - 0.5) * 100,
@@ -1908,7 +1893,9 @@ async function handleRequest(request) {
         let backgroundMusic = {
             playing: false,
             oscillators: [],
-            gainNodes: []
+            gainNodes: [],
+            melodyInterval: null,
+            cleanupInterval: null
         };
         
         const musicNotes = {
@@ -1935,11 +1922,34 @@ async function handleRequest(request) {
             }
             
             backgroundMusic.playing = true;
-            playMelodyLoop();
+            
+            // Use interval instead of recursive setTimeout for better performance
+            backgroundMusic.melodyInterval = setInterval(() => {
+                if (backgroundMusic.playing && audioSettings.music > 0) {
+                    playMelodyNote();
+                } else {
+                    clearInterval(backgroundMusic.melodyInterval);
+                }
+            }, 3000 + Math.random() * 2000); // 3-5 second intervals
+            
+            // Cleanup old oscillators periodically
+            backgroundMusic.cleanupInterval = setInterval(cleanupOscillators, 5000);
         }
         
         function stopBackgroundMusic() {
             backgroundMusic.playing = false;
+            
+            // Clear intervals
+            if (backgroundMusic.melodyInterval) {
+                clearInterval(backgroundMusic.melodyInterval);
+                backgroundMusic.melodyInterval = null;
+            }
+            if (backgroundMusic.cleanupInterval) {
+                clearInterval(backgroundMusic.cleanupInterval);
+                backgroundMusic.cleanupInterval = null;
+            }
+            
+            // Stop and cleanup all oscillators
             backgroundMusic.oscillators.forEach(osc => {
                 try {
                     osc.stop();
@@ -1951,17 +1961,16 @@ async function handleRequest(request) {
             backgroundMusic.gainNodes = [];
         }
         
-        function playMelodyLoop() {
+        function playMelodyNote() {
             if (!backgroundMusic.playing || !musicGainNode || audioSettings.music === 0) return;
             
             const noteIndex = Math.floor(Math.random() * musicNotes.melody.length);
             const frequency = musicNotes.melody[noteIndex];
-            const bassFreq = musicNotes.bass[noteIndex];
             
             // Calculate current music volume
-            const musicVolume = audioSettings.master * audioSettings.music * 0.15;
+            const musicVolume = audioSettings.master * audioSettings.music * 0.1; // Reduced volume
             
-            // Play melody note
+            // Play melody note only (removed bass to reduce complexity)
             const melodyOsc = audioContext.createOscillator();
             const melodyGain = audioContext.createGain();
             
@@ -1973,43 +1982,42 @@ async function handleRequest(request) {
             
             melodyGain.gain.setValueAtTime(0, audioContext.currentTime);
             melodyGain.gain.linearRampToValueAtTime(musicVolume, audioContext.currentTime + 0.1);
-            melodyGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 2);
+            melodyGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1.5);
             
             melodyOsc.start();
-            melodyOsc.stop(audioContext.currentTime + 2);
+            melodyOsc.stop(audioContext.currentTime + 1.5);
+            
+            // Mark oscillator for cleanup after it stops
+            setTimeout(() => {
+                const oscIndex = backgroundMusic.oscillators.indexOf(melodyOsc);
+                const gainIndex = backgroundMusic.gainNodes.indexOf(melodyGain);
+                if (oscIndex > -1) backgroundMusic.oscillators.splice(oscIndex, 1);
+                if (gainIndex > -1) backgroundMusic.gainNodes.splice(gainIndex, 1);
+            }, 1600); // Cleanup 100ms after stop
             
             backgroundMusic.oscillators.push(melodyOsc);
             backgroundMusic.gainNodes.push(melodyGain);
+        }
+        
+        function cleanupOscillators() {
+            // Remove stopped oscillators to prevent memory leaks
+            backgroundMusic.oscillators = backgroundMusic.oscillators.filter(osc => {
+                try {
+                    // If oscillator is in a valid state, keep it
+                    return osc.context.state === 'running';
+                } catch (e) {
+                    // If oscillator is invalid, remove it
+                    return false;
+                }
+            });
             
-            // Occasionally play bass note
-            if (Math.random() < 0.3) {
-                setTimeout(() => {
-                    if (!backgroundMusic.playing || !musicGainNode) return;
-                    
-                    const bassOsc = audioContext.createOscillator();
-                    const bassGain = audioContext.createGain();
-                    
-                    bassOsc.connect(bassGain);
-                    bassGain.connect(musicGainNode);
-                    
-                    bassOsc.type = 'sine';
-                    bassOsc.frequency.setValueAtTime(bassFreq, audioContext.currentTime);
-                    
-                    bassGain.gain.setValueAtTime(0, audioContext.currentTime);
-                    bassGain.gain.linearRampToValueAtTime(musicVolume * 0.6, audioContext.currentTime + 0.1);
-                    bassGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1.5);
-                    
-                    bassOsc.start();
-                    bassOsc.stop(audioContext.currentTime + 1.5);
-                    
-                    backgroundMusic.oscillators.push(bassOsc);
-                    backgroundMusic.gainNodes.push(bassGain);
-                }, 500);
-            }
-            
-            // Schedule next note
-            const nextNoteDelay = 2000 + Math.random() * 3000; // 2-5 seconds
-            setTimeout(playMelodyLoop, nextNoteDelay);
+            backgroundMusic.gainNodes = backgroundMusic.gainNodes.filter(gain => {
+                try {
+                    return gain.context.state === 'running';
+                } catch (e) {
+                    return false;
+                }
+            });
         }
         
         // Audio ducking functions
@@ -2299,8 +2307,8 @@ async function handleRequest(request) {
                             vibrateSuccess();
                             playIngredientCorrect();
                             
-                            // Create particles with dynamic colors
-                            for (let j = 0; j < 10; j++) {
+                            // Create particles with dynamic colors (reduced count)
+                            for (let j = 0; j < 5; j++) {
                                 particles.push(new Particle(ingredient.x + ingredient.data.size / 2, 
                                                            ingredient.y + ingredient.data.size / 2, 
                                                            colorTheme.accent));
@@ -2348,8 +2356,8 @@ async function handleRequest(request) {
                             const orderIndex = orders.indexOf(order);
                             orders.splice(orderIndex, 1);
                             
-                            // Create celebration particles with enhanced effects
-                            for (let j = 0; j < 20; j++) {
+                            // Create celebration particles with enhanced effects (reduced count)
+                            for (let j = 0; j < 10; j++) {
                                 const celebrationEmojis = ['✨', '🎉', '🎆', '⭐', '💫', '🌟'];
                                 const randomEmoji = celebrationEmojis[Math.floor(Math.random() * celebrationEmojis.length)];
                                 const celebrationColor = j % 3 === 0 ? colorTheme.primary : j % 3 === 1 ? colorTheme.accent : colorTheme.secondary;
@@ -2508,8 +2516,8 @@ async function handleRequest(request) {
                 
                 // Increase difficulty
                 if (frameCount % 500 === 0) {
-                    ingredientSpeed = Math.min(ingredientSpeed + 0.1, 5);
-                    spawnRate = Math.max(spawnRate - 2, 40);
+                    ingredientSpeed = Math.min(ingredientSpeed + 0.2, 8);
+                    spawnRate = Math.max(spawnRate - 2, 30);
                 }
             }
             
@@ -2574,7 +2582,12 @@ async function handleRequest(request) {
                 }
             }
 
-            // Update and draw particles
+            // Update and draw particles (with performance limit)
+            const maxParticles = 50; // Limit total particles for performance
+            if (particles.length > maxParticles) {
+                particles.splice(0, particles.length - maxParticles);
+            }
+            
             for (let i = particles.length - 1; i >= 0; i--) {
                 const particle = particles[i];
                 particle.update();
@@ -2611,8 +2624,8 @@ async function handleRequest(request) {
             particles = [];
             powerUps = [];
             frameCount = 0;
-            ingredientSpeed = 2;
-            spawnRate = 80;
+            ingredientSpeed = 4;
+            spawnRate = 70;
             lastSpawn = 0;
             lastPowerUpSpawn = 0;
             
