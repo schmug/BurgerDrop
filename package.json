@@ -3,15 +3,16 @@
   "version": "1.0.0",
   "description": "A fun HTML5 canvas game where players tap falling ingredients to complete burger orders",
   "main": "src/worker.js",
+  "type": "module",
   "scripts": {
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "build": "rollup -c",
-    "build:dev": "rollup -c --environment NODE_ENV:development",
-    "build:prod": "rollup -c --environment NODE_ENV:production"
+    "build": "echo 'Build temporarily disabled during modularization - using original worker.js'",
+    "build:dev": "echo 'Build temporarily disabled during modularization'",
+    "build:prod": "echo 'Build temporarily disabled during modularization'"
   },
   "keywords": ["game", "html5", "canvas", "burger", "restaurant"],
   "author": "",
