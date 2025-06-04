@@ -32,7 +32,9 @@
       "Bash(npm uninstall:*)",
       "Bash(cp:*)",
       "Bash(grep:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(rg:*)",
+      "Bash(pkill:*)"
     ],
     "deny": []
   }

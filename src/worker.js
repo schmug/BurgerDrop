@@ -641,7 +641,7 @@ async function handleRequest(request) {
                 ctx.stroke();
                 
                 // Emoji
-                ctx.font = `${this.size * 0.6}px Arial`;
+                ctx.font = \`\${this.size * 0.6}px Arial\`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillStyle = '#FFFFFF';
@@ -771,7 +771,7 @@ async function handleRequest(request) {
                     
                     // Add paper fibers
                     for(let i = 0; i < 20; i++) {
-                        patternCtx.strokeStyle = `rgba(220, 220, 200, ${Math.random() * 0.3})`;
+                        patternCtx.strokeStyle = \`rgba(220, 220, 200, \${Math.random() * 0.3})\`;
                         patternCtx.lineWidth = 0.5;
                         patternCtx.beginPath();
                         patternCtx.moveTo(Math.random() * size, Math.random() * size);
@@ -865,10 +865,10 @@ async function handleRequest(request) {
             const lightness = 45 + (Math.sin(frameCount * 0.05) * 10); // Subtle pulsing 35-55%
             
             // Update theme colors
-            colorTheme.primary = `hsl(${colorTheme.hue + 45}, ${saturation}%, ${lightness + 15}%)`;
-            colorTheme.secondary = `hsl(${colorTheme.hue + 15}, ${saturation}%, ${lightness}%)`;
-            colorTheme.accent = `hsl(${colorTheme.hue + 120}, ${saturation}%, ${lightness}%)`;
-            colorTheme.warning = `hsl(${0}, ${saturation + 20}%, ${lightness}%)`;
+            colorTheme.primary = \`hsl(\${colorTheme.hue + 45}, \${saturation}%, \${lightness + 15}%)\`;
+            colorTheme.secondary = \`hsl(\${colorTheme.hue + 15}, \${saturation}%, \${lightness}%)\`;
+            colorTheme.accent = \`hsl(\${colorTheme.hue + 120}, \${saturation}%, \${lightness}%)\`;
+            colorTheme.warning = \`hsl(\${0}, \${saturation + 20}%, \${lightness}%)\`;
         }
         
         // Try to load high score from localStorage (won't work in sandbox)
@@ -1051,7 +1051,7 @@ async function handleRequest(request) {
                     this.data.variants[Math.floor(frameCount / 30) % this.data.variants.length] : 
                     this.data.emoji;
                 
-                ctx.font = `${this.data.size}px Arial`; // Keep Arial for emoji compatibility
+                ctx.font = \`\${this.data.size}px Arial\`; // Keep Arial for emoji compatibility
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(emojiToUse, 0, 0);
@@ -1073,8 +1073,8 @@ async function handleRequest(request) {
                         const gradient = ctx.createLinearGradient(
                             point.x, point.y, nextPoint.x, nextPoint.y
                         );
-                        gradient.addColorStop(0, `rgba(255, 255, 255, ${point.alpha * 0.3})`);
-                        gradient.addColorStop(1, `rgba(255, 255, 255, ${nextPoint.alpha * 0.3})`);
+                        gradient.addColorStop(0, \`rgba(255, 255, 255, \${point.alpha * 0.3})\`);
+                        gradient.addColorStop(1, \`rgba(255, 255, 255, \${nextPoint.alpha * 0.3})\`);
                         
                         ctx.strokeStyle = gradient;
                         ctx.lineWidth = Math.max(point.size * 0.15, 1);
@@ -1181,7 +1181,7 @@ async function handleRequest(request) {
                 const timeSeconds = Math.ceil(this.timeLeft / 1000);
                 ctx.fillStyle = this.timeLeft < 10000 ? '#FF0000' : '#333';
                 ctx.font = '700 14px Nunito, Arial';
-                ctx.fillText(`${timeSeconds}s`, this.x + this.width / 2, this.y + 30);
+                ctx.fillText(\`\${timeSeconds}s\`, this.x + this.width / 2, this.y + 30);
 
                 // Ingredients (from bottom to top)
                 const startY = this.y + this.height - 25;
@@ -1211,7 +1211,7 @@ async function handleRequest(request) {
                         
                         // Add pulsing effect
                         const pulseAlpha = 0.3 + Math.sin(frameCount * 0.15) * 0.2;
-                        ctx.fillStyle = `rgba(255, 215, 0, ${pulseAlpha})`;
+                        ctx.fillStyle = \`rgba(255, 215, 0, \${pulseAlpha})\`;
                         ctx.fillRect(this.x + 1, yPos - 19, this.width - 2, 33);
                     }
                     
@@ -1318,7 +1318,7 @@ async function handleRequest(request) {
                 ctx.scale(this.scale, this.scale);
                 
                 if (this.text) {
-                    ctx.font = `bold ${20 + this.size * 2}px Arial`; // Keep Arial for emoji compatibility
+                    ctx.font = \`bold \${20 + this.size * 2}px Arial\`; // Keep Arial for emoji compatibility
                     ctx.fillStyle = this.color;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
@@ -1591,7 +1591,7 @@ async function handleRequest(request) {
                 shakeY = (Math.random() - 0.5) * shakeIntensity;
                 
                 // Apply shake to canvas
-                canvas.style.transform = `translate(${shakeX}px, ${shakeY}px)`;
+                canvas.style.transform = \`translate(\${shakeX}px, \${shakeY}px)\`;
                 
                 // Gradually reduce intensity
                 shakeIntensity *= 0.9;
@@ -2289,7 +2289,7 @@ async function handleRequest(request) {
                             
                             score += finalScore;
                             const scoreText = scoreMultiplier > 1 ? 
-                                `+${finalScore} (x${scoreMultiplier})` : `+${finalScore}`;
+                                \`+\${finalScore} (x\${scoreMultiplier})\` : \`+\${finalScore}\`;
                             createFloatingText(x + rect.left, y + rect.top, scoreText, '#00FF00');
                             
                             // Subtle green flash for correct ingredient
@@ -2316,8 +2316,8 @@ async function handleRequest(request) {
                             score += finalScore;
                             
                             const scoreText = scoreMultiplier > 1 ? 
-                                `ORDER COMPLETE! +${finalScore} (x${scoreMultiplier})` : 
-                                `ORDER COMPLETE! +${finalScore}`;
+                                \`ORDER COMPLETE! +\${finalScore} (x\${scoreMultiplier})\` : 
+                                \`ORDER COMPLETE! +\${finalScore}\`;
                             createFloatingText(x + rect.left, y + rect.top, scoreText, colorTheme.primary);
                             
                             // Small celebration shake and flash
@@ -2389,8 +2389,8 @@ async function handleRequest(request) {
         }
 
         function updateUI() {
-            document.getElementById('score').textContent = `Score: ${score}`;
-            document.getElementById('combo').textContent = `Combo: x${combo}`;
+            document.getElementById('score').textContent = \`Score: \${score}\`;
+            document.getElementById('combo').textContent = \`Combo: x\${combo}\`;
             
             // Update UI colors based on theme
             const scoreElement = document.getElementById('score');
@@ -2398,12 +2398,12 @@ async function handleRequest(request) {
             
             // Dynamic score coloring
             scoreElement.style.color = colorTheme.primary;
-            scoreElement.style.textShadow = `2px 2px 4px rgba(255, 255, 255, 0.5), 0 0 10px ${colorTheme.primary}40`;
+            scoreElement.style.textShadow = \`2px 2px 4px rgba(255, 255, 255, 0.5), 0 0 10px \${colorTheme.primary}40\`;
             
             // Dynamic combo coloring with intensity based on level
             const comboIntensity = Math.min(combo / 5, 1);
             comboElement.style.color = colorTheme.secondary;
-            comboElement.style.textShadow = `2px 2px 4px rgba(255, 255, 255, 0.5), 0 0 ${8 + comboIntensity * 12}px ${colorTheme.secondary}60`;
+            comboElement.style.textShadow = \`2px 2px 4px rgba(255, 255, 255, 0.5), 0 0 \${8 + comboIntensity * 12}px \${colorTheme.secondary}60\`;
             
             comboElement.classList.remove('pulse');
             void comboElement.offsetWidth; // Force reflow
@@ -2432,12 +2432,12 @@ async function handleRequest(request) {
                     const timeLeft = Math.ceil(powerUp.timeLeft / 1000);
                     
                     const indicator = document.createElement('div');
-                    indicator.className = `power-up-indicator ${type.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
-                    indicator.innerHTML = `
-                        <span>${powerUpData.emoji}</span>
-                        <span>${powerUpData.name}</span>
-                        <span class="power-up-timer">${timeLeft}s</span>
-                    `;
+                    indicator.className = \`power-up-indicator \${type.replace(/([A-Z])/g, '-$1').toLowerCase()}\`;
+                    indicator.innerHTML = \`
+                        <span>\${powerUpData.emoji}</span>
+                        <span>\${powerUpData.name}</span>
+                        <span class="power-up-timer">\${timeLeft}s</span>
+                    \`;
                     
                     statusContainer.appendChild(indicator);
                 }
@@ -2666,8 +2666,8 @@ async function handleRequest(request) {
                 }
             }
 
-            document.getElementById('finalScore').textContent = `Final Score: ${score}`;
-            document.getElementById('highScore').textContent = `High Score: ${highScore}`;
+            document.getElementById('finalScore').textContent = \`Final Score: \${score}\`;
+            document.getElementById('highScore').textContent = \`High Score: \${highScore}\`;
             document.getElementById('gameOver').style.display = 'block';
         }
 
