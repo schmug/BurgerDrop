@@ -588,32 +588,25 @@ async function handleRequest(request) {
                 this.data = powerUpTypes[type];
                 this.x = Math.random() * (canvas.width - 50);
                 this.y = -50;
-                this.speed = 1 + Math.random() * 0.5; // Slower than ingredients
-                this.rotation = 0;
-                this.rotationSpeed = 0.05;
+                this.speed = 1.5; // Fixed speed for consistency
                 this.collected = false;
-                this.pulsePhase = Math.random() * Math.PI * 2;
                 this.size = 40;
+                this.cachedFont = null; // Cache font for performance
             }
             
             update() {
                 this.y += this.speed;
-                this.rotation += this.rotationSpeed;
-                this.pulsePhase += 0.1;
             }
             
             draw() {
-                ctx.save();
-                ctx.translate(this.x + this.size/2, this.y + this.size/2);
+                // Pre-calculate position
+                const centerX = this.x + this.size/2;
+                const centerY = this.y + this.size/2;
                 
-                // Simplified pulsing effect (reduced calculation)
-                const pulse = Math.sin(this.pulsePhase) * 0.15 + 0.85;
-                const currentSize = this.size * pulse;
-                
-                // Simplified background (removed expensive gradient)
+                // Simple static circle (removed all animations for performance)
                 ctx.fillStyle = this.data.color;
                 ctx.beginPath();
-                ctx.arc(0, 0, currentSize/2, 0, Math.PI * 2);
+                ctx.arc(centerX, centerY, this.size/2, 0, Math.PI * 2);
                 ctx.fill();
                 
                 // Simple border
@@ -621,18 +614,15 @@ async function handleRequest(request) {
                 ctx.lineWidth = 2;
                 ctx.stroke();
                 
-                // Emoji (cached font setting)
-                if (!this.cachedFontSize || this.cachedFontSize !== currentSize) {
-                    this.cachedFontSize = currentSize;
-                    this.cachedFont = \`\${currentSize * 0.6}px Arial\`;
+                // Static emoji (cached font)
+                if (!this.cachedFont) {
+                    this.cachedFont = \`\${this.size * 0.6}px Arial\`;
                 }
                 ctx.font = this.cachedFont;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillStyle = '#FFFFFF';
-                ctx.fillText(this.data.emoji, 0, 0);
-                
-                ctx.restore();
+                ctx.fillText(this.data.emoji, centerX, centerY);
             }
             
             isClicked(x, y) {
@@ -817,8 +807,8 @@ async function handleRequest(request) {
         }
         
         function updatePowerUps() {
-            // Update active power-ups
-            Object.keys(activePowerUps).forEach(type => {
+            // Update active power-ups (optimized - only update active ones)
+            for (const type in activePowerUps) {
                 const powerUp = activePowerUps[type];
                 if (powerUp.active) {
                     powerUp.timeLeft -= 16; // ~60fps
@@ -827,11 +817,11 @@ async function handleRequest(request) {
                         powerUp.timeLeft = 0;
                     }
                 }
-            });
+            }
         }
         
         function spawnPowerUp() {
-            if (powerUps.length < 1 && frameCount - lastPowerUpSpawn > 600) { // Every 10 seconds minimum
+            if (powerUps.length < 1 && frameCount - lastPowerUpSpawn > 900) { // Every 15 seconds minimum (reduced frequency)
                 const types = Object.keys(powerUpTypes);
                 const randomType = types[Math.floor(Math.random() * types.length)];
                 powerUps.push(new PowerUp(randomType));
@@ -2431,11 +2421,17 @@ async function handleRequest(request) {
             updatePowerUpUI();
         }
         
+        let powerUpUIUpdateCounter = 0;
         function updatePowerUpUI() {
+            // Only update UI every 30 frames (~0.5 seconds) for better performance
+            powerUpUIUpdateCounter++;
+            if (powerUpUIUpdateCounter < 30) return;
+            powerUpUIUpdateCounter = 0;
+            
             const statusContainer = document.getElementById('powerUpStatus');
             statusContainer.innerHTML = '';
             
-            Object.keys(activePowerUps).forEach(type => {
+            for (const type in activePowerUps) {
                 const powerUp = activePowerUps[type];
                 if (powerUp.active) {
                     const powerUpData = powerUpTypes[type];
@@ -2451,7 +2447,7 @@ async function handleRequest(request) {
                     
                     statusContainer.appendChild(indicator);
                 }
-            });
+            }
         }
 
         function gameLoop(currentTime) {
@@ -2570,7 +2566,11 @@ async function handleRequest(request) {
                 }
             }
             
-            // Update and draw power-ups
+            // Update and draw power-ups (limit to 2 max for performance)
+            if (powerUps.length > 2) {
+                powerUps.splice(2);
+            }
+            
             for (let i = powerUps.length - 1; i >= 0; i--) {
                 const powerUp = powerUps[i];
                 powerUp.update();
