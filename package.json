@@ -2,16 +2,22 @@
   "name": "burger-drop",
   "version": "1.0.0",
   "description": "A fun HTML5 canvas game where players tap falling ingredients to complete burger orders",
-  "main": "index.html",
+  "main": "src/worker.js",
   "scripts": {
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "build": "echo 'No build step required for static HTML game'"
   },
   "keywords": ["game", "html5", "canvas", "burger", "restaurant"],
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "wrangler": "^4.18.0"
+    "wrangler": "^4.18.0",
+    "vitest": "^1.0.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "jsdom": "^23.0.0"
   }
 }

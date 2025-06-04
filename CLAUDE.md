@@ -4,11 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-BurgerDrop is a single-file HTML5 canvas game where players tap falling ingredients to complete burger orders. The entire game is contained in one `index.html` file with embedded CSS and JavaScript.
+BurgerDrop is an HTML5 canvas game where players tap falling ingredients to complete burger orders. The game is deployed via Cloudflare Workers for serverless hosting.
 
 ## Architecture
 
-- **Single-file architecture**: All game logic, styling, and HTML are contained in `index.html`
+- **Cloudflare Workers deployment**: Game is served from `src/worker.js` with embedded HTML
 - **Canvas-based rendering**: Uses HTML5 canvas for game graphics with 2D context
 - **Entity system**: Implemented through classes:
   - `Ingredient`: Falling game objects with physics
@@ -40,12 +40,27 @@ BurgerDrop is a single-file HTML5 canvas game where players tap falling ingredie
 - **Wrangler**: Uses wrangler 4.18.0 for deployment management
 - **Worker Architecture**: HTML is embedded directly in `src/worker.js` for serverless deployment
 
-⚠️ **IMPORTANT**: Any changes made to `index.html` must also be replicated in `src/worker.js` for deployment. The worker.js file contains an embedded copy of the entire game HTML that gets served to users. Always update both files when making changes to maintain consistency between local development and production deployment.
+## Testing
+
+The project includes a comprehensive testing framework using Vitest:
+
+- **Test Framework**: Vitest with JSDOM environment for DOM testing
+- **Coverage**: V8 coverage provider with HTML, JSON, and text reports
+- **Test Categories**:
+  - Game logic tests (ingredients, orders, scoring)
+  - Collision detection tests
+  - Audio system tests
+  - Power-up system tests
+  - Cloudflare Worker tests
+- **Mocking**: Canvas API, Web Audio API, and localStorage are mocked for testing
 
 ## Commands
 
 - `npm run dev` - Start local development server with wrangler
 - `npm run deploy` - Deploy to Cloudflare Workers
+- `npm test` - Run tests in watch mode
+- `npm run test:run` - Run tests once
+- `npm run test:coverage` - Run tests with coverage report
 - `wrangler login` - Authenticate with Cloudflare (required once)
 
 ## Setup Requirements
