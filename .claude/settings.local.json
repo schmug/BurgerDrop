@@ -34,7 +34,9 @@
       "Bash(grep:*)",
       "Bash(npm run dev:*)",
       "Bash(rg:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(diff:*)",
+      "WebFetch(domain:burger-drop.cory7593.workers.dev)"
     ],
     "deny": []
   }

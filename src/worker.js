@@ -1898,7 +1898,9 @@ async function handleRequest(request) {
         }
         
         function playButtonClick() {
-            playSound(soundEffects.buttonClick);
+            if (typeof soundEffects !== 'undefined') {
+                playSound(soundEffects.buttonClick);
+            }
         }
         
         function playComboIncrease() {
