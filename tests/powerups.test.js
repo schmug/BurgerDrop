@@ -5,7 +5,7 @@ describe('Power-up System', () => {
     it('should have correct power-up definitions', () => {
       const powerUpTypes = {
         speedBoost: {
-          name: 'Speed Boost',
+          name: 'Slow Motion',
           duration: 5000,
           effect: 'ingredient_speed_multiplier',
           value: 0.5
@@ -25,6 +25,7 @@ describe('Power-up System', () => {
       }
 
       expect(powerUpTypes.speedBoost.duration).toBe(5000)
+      expect(powerUpTypes.speedBoost.name).toBe('Slow Motion')
       expect(powerUpTypes.timeFreeze.effect).toBe('freeze_time')
       expect(powerUpTypes.scoreMultiplier.value).toBe(2)
     })
@@ -81,7 +82,7 @@ describe('Power-up System', () => {
   })
 
   describe('Power-up Effects', () => {
-    it('should calculate speed boost effect', () => {
+    it('should calculate slow motion effect', () => {
       const baseSpeed = 2
       const speedMultiplier = 0.5 // Makes ingredients slower
       const effectiveSpeed = baseSpeed * speedMultiplier

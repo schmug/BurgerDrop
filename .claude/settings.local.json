@@ -39,7 +39,14 @@
       "WebFetch(domain:burger-drop.cory7593.workers.dev)",
       "Bash(npm test)",
       "Bash(npm run test:run:*)",
-      "Bash(npm run test:coverage:*)"
+      "Bash(npm run test:coverage:*)",
+      "Bash(/home/schmug/.nvm/versions/node/v23.10.0/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"function.*game|function.*update|function.*check|function.*generate|function.*score\" /mnt/c/Users/coryr/BurgerDrop/src/worker.js)",
+      "Bash(/home/schmug/.nvm/versions/node/v23.10.0/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"gameLoop|startGame|endGame|checkCollision|generateOrder|addScore\" /mnt/c/Users/coryr/BurgerDrop/src/worker.js)",
+      "Bash(/home/schmug/.nvm/versions/node/v23.10.0/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n -A 50 \"gameLoop\" /mnt/c/Users/coryr/BurgerDrop/src/worker.js)",
+      "Bash(/home/schmug/.nvm/versions/node/v23.10.0/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n -A 10 \"function spawn|function handle\" /mnt/c/Users/coryr/BurgerDrop/src/worker.js)",
+      "Bash(/home/schmug/.nvm/versions/node/v23.10.0/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n -A 20 \"spawnIngredient|spawnOrder|spawnPowerUp\" /mnt/c/Users/coryr/BurgerDrop/src/worker.js)",
+      "Bash(/home/schmug/.nvm/versions/node/v23.10.0/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n -B 5 -A 15 \"spawnIngredient\" /mnt/c/Users/coryr/BurgerDrop/src/worker.js)",
+      "Bash(/home/schmug/.nvm/versions/node/v23.10.0/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n -A 20 \"orderTemplates.*=\" /mnt/c/Users/coryr/BurgerDrop/src/worker.js)"
     ],
     "deny": []
   }

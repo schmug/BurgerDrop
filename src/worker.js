@@ -561,8 +561,8 @@ async function handleRequest(request) {
         
         const powerUpTypes = {
             speedBoost: {
-                emoji: '⚡',
-                name: 'Speed Boost',
+                emoji: '🐌',
+                name: 'Slow Motion',
                 color: '#FFD700',
                 duration: 8000, // 8 seconds
                 description: 'Slows ingredient fall speed'
