@@ -879,9 +879,6 @@ async function handleRequest(request) {
             highScore = 0;
         }
         
-        // Initialize audio system
-        initAudio();
-
         // Enhanced ingredient types with multiple emoji variations
         const ingredientTypes = {
             bun_top: { 
@@ -2132,6 +2129,9 @@ async function handleRequest(request) {
                 audioSettings.classList.remove('visible');
             }
         });
+        
+        // Initialize audio system after all audio variables are declared
+        initAudio();
         
         // Canvas ImageData manipulation for special effects
         let pixelEffects = {
