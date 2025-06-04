@@ -40,6 +40,8 @@ BurgerDrop is a single-file HTML5 canvas game where players tap falling ingredie
 - **Wrangler**: Uses wrangler 4.18.0 for deployment management
 - **Worker Architecture**: HTML is embedded directly in `src/worker.js` for serverless deployment
 
+⚠️ **IMPORTANT**: Any changes made to `index.html` must also be replicated in `src/worker.js` for deployment. The worker.js file contains an embedded copy of the entire game HTML that gets served to users. Always update both files when making changes to maintain consistency between local development and production deployment.
+
 ## Commands
 
 - `npm run dev` - Start local development server with wrangler
