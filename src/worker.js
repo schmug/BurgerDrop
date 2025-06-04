@@ -528,7 +528,7 @@ async function handleRequest(request) {
         let powerUps = [];
         let frameCount = 0;
         let ingredientSpeed = 4;
-        let spawnRate = 70;
+        let spawnRate = 40;
         let lastSpawn = 0;
         let lastPowerUpSpawn = 0;
         
@@ -945,7 +945,10 @@ async function handleRequest(request) {
                 this.data = ingredientTypes[type];
                 this.x = Math.random() * (canvas.width - this.data.size);
                 this.y = -this.data.size;
-                this.speed = ingredientSpeed + Math.random();
+                // Random speed with more variation - some ingredients fall much faster/slower
+                const speedVariation = Math.random() * 4 - 2; // ±2 variation
+                const speedMultiplier = Math.random() < 0.1 ? (Math.random() < 0.5 ? 0.4 : 2.2) : 1; // 10% chance of very slow/fast
+                this.speed = (ingredientSpeed + speedVariation) * speedMultiplier;
                 this.rotation = Math.random() * Math.PI * 2;
                 this.rotationSpeed = (Math.random() - 0.5) * 0.1;
                 this.baseSpeed = this.speed;
@@ -2509,12 +2512,23 @@ async function handleRequest(request) {
             // Spawn ingredients
             if (frameCount - lastSpawn > spawnRate) {
                 spawnIngredient();
+                
+                // 30% chance to spawn an additional ingredient for more chaos
+                if (Math.random() < 0.3) {
+                    spawnIngredient();
+                }
+                
+                // 10% chance for a triple spawn burst
+                if (Math.random() < 0.1) {
+                    spawnIngredient();
+                }
+                
                 lastSpawn = frameCount;
                 
                 // Increase difficulty
                 if (frameCount % 500 === 0) {
                     ingredientSpeed = Math.min(ingredientSpeed + 0.2, 8);
-                    spawnRate = Math.max(spawnRate - 2, 30);
+                    spawnRate = Math.max(spawnRate - 1, 20);
                 }
             }
             
@@ -2556,6 +2570,11 @@ async function handleRequest(request) {
             orders.forEach((order, index) => order.draw(index));
 
             // Update and draw ingredients
+            // Limit total ingredients for performance (with increased spawn rate)
+            if (ingredients.length > 25) {
+                ingredients.splice(0, ingredients.length - 25);
+            }
+            
             for (let i = ingredients.length - 1; i >= 0; i--) {
                 const ingredient = ingredients[i];
                 ingredient.update();
@@ -2626,7 +2645,7 @@ async function handleRequest(request) {
             powerUps = [];
             frameCount = 0;
             ingredientSpeed = 4;
-            spawnRate = 70;
+            spawnRate = 40;
             lastSpawn = 0;
             lastPowerUpSpawn = 0;
             
