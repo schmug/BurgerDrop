@@ -795,8 +795,8 @@ async function handleRequest(request) {
             startScreenFlash(powerUpData.color, 0.2, 8);
             vibrateSuccess();
             
-            // Create celebration particles (reduced count)
-            for (let i = 0; i < 8; i++) {
+            // Create celebration particles (minimal count for performance)
+            for (let i = 0; i < 3; i++) {
                 particles.push(new Particle(
                     canvas.width/2 + (Math.random() - 0.5) * 100,
                     canvas.height/2 + (Math.random() - 0.5) * 100,
@@ -2162,73 +2162,37 @@ async function handleRequest(request) {
         }
         
         function applyPixelEffects() {
-            if (!pixelEffects.glitchActive && !pixelEffects.rippleActive) return;
+            // PERFORMANCE OPTIMIZED: Lightweight canvas effects instead of expensive pixel manipulation
             
-            try {
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const data = imageData.data;
+            if (pixelEffects.glitchActive) {
+                // Simple overlay glitch effect
+                ctx.save();
+                ctx.globalAlpha = 0.15;
+                ctx.fillStyle = Math.random() > 0.5 ? '#ff0000' : '#00ff00';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
                 
-                // Glitch effect
-                if (pixelEffects.glitchActive) {
-                    const intensity = pixelEffects.glitchIntensity;
-                    
-                    for (let i = 0; i < data.length; i += 4) {
-                        if (Math.random() < intensity) {
-                            // RGB channel shifting
-                            const shift = Math.floor(Math.random() * 20 - 10);
-                            const sourceIndex = Math.max(0, Math.min(data.length - 4, i + shift * 4));
-                            
-                            data[i] = data[sourceIndex]; // Red
-                            data[i + 1] = data[sourceIndex + 1]; // Green
-                            data[i + 2] = data[sourceIndex + 2]; // Blue
-                        }
-                        
-                        // Random noise
-                        if (Math.random() < intensity * 0.1) {
-                            data[i] = Math.random() * 255;
-                            data[i + 1] = Math.random() * 255;
-                            data[i + 2] = Math.random() * 255;
-                        }
-                    }
-                    
-                    pixelEffects.glitchDuration--;
-                    if (pixelEffects.glitchDuration <= 0) {
-                        pixelEffects.glitchActive = false;
-                    }
+                pixelEffects.glitchDuration--;
+                if (pixelEffects.glitchDuration <= 0) {
+                    pixelEffects.glitchActive = false;
                 }
+            }
+            
+            if (pixelEffects.rippleActive) {
+                // Simple expanding circle effect
+                ctx.save();
+                ctx.globalAlpha = 0.3;
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(pixelEffects.rippleX, pixelEffects.rippleY, pixelEffects.rippleRadius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
                 
-                // Ripple effect
-                if (pixelEffects.rippleActive) {
-                    const centerX = pixelEffects.rippleX;
-                    const centerY = pixelEffects.rippleY;
-                    const radius = pixelEffects.rippleRadius;
-                    
-                    for (let y = 0; y < canvas.height; y++) {
-                        for (let x = 0; x < canvas.width; x++) {
-                            const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
-                            
-                            if (distance < radius && distance > radius - 20) {
-                                const index = (y * canvas.width + x) * 4;
-                                const wave = Math.sin(distance * 0.1 - frameCount * 0.3) * 0.5 + 0.5;
-                                
-                                // Color wave effect
-                                data[index] = Math.min(255, data[index] + wave * 50);     // Red
-                                data[index + 1] = Math.min(255, data[index + 1] + wave * 30); // Green
-                                data[index + 2] = Math.min(255, data[index + 2] + wave * 70); // Blue
-                            }
-                        }
-                    }
-                    
-                    pixelEffects.rippleRadius += 3;
-                    if (pixelEffects.rippleRadius > pixelEffects.rippleMaxRadius) {
-                        pixelEffects.rippleActive = false;
-                    }
+                pixelEffects.rippleRadius += 8;
+                if (pixelEffects.rippleRadius > pixelEffects.rippleMaxRadius) {
+                    pixelEffects.rippleActive = false;
                 }
-                
-                ctx.putImageData(imageData, 0, 0);
-            } catch (e) {
-                // Handle potential security errors with canvas data
-                console.log('Pixel effects not available in this context');
             }
         }
 
@@ -2301,8 +2265,8 @@ async function handleRequest(request) {
                             vibrateSuccess();
                             playIngredientCorrect();
                             
-                            // Create particles with dynamic colors (reduced count)
-                            for (let j = 0; j < 5; j++) {
+                            // Create particles with dynamic colors (minimal count)
+                            for (let j = 0; j < 2; j++) {
                                 particles.push(new Particle(ingredient.x + ingredient.data.size / 2, 
                                                            ingredient.y + ingredient.data.size / 2, 
                                                            colorTheme.accent));
@@ -2324,11 +2288,11 @@ async function handleRequest(request) {
                                 \`ORDER COMPLETE! +\${finalScore}\`;
                             createFloatingText(x + rect.left, y + rect.top, scoreText, colorTheme.primary);
                             
-                            // Small celebration shake and flash
-                            startScreenShake(4, 8);
-                            startScreenFlash(colorTheme.primary, 0.3, 10);
+                            // Small celebration shake and flash (performance optimized)
+                            startScreenShake(2, 4);
+                            startScreenFlash(colorTheme.primary, 0.15, 5);
                             vibrateCompletion();
-                            startRippleEffect(order.x + order.width / 2, order.y + order.height / 2, 150);
+                            startRippleEffect(order.x + order.width / 2, order.y + order.height / 2, 100);
                             playOrderComplete();
                             
                             // Trigger score bounce animation
@@ -2350,11 +2314,11 @@ async function handleRequest(request) {
                             const orderIndex = orders.indexOf(order);
                             orders.splice(orderIndex, 1);
                             
-                            // Create celebration particles with enhanced effects (reduced count)
-                            for (let j = 0; j < 10; j++) {
-                                const celebrationEmojis = ['✨', '🎉', '🎆', '⭐', '💫', '🌟'];
-                                const randomEmoji = celebrationEmojis[Math.floor(Math.random() * celebrationEmojis.length)];
-                                const celebrationColor = j % 3 === 0 ? colorTheme.primary : j % 3 === 1 ? colorTheme.accent : colorTheme.secondary;
+                            // Create celebration particles with enhanced effects (minimal count)
+                            for (let j = 0; j < 4; j++) {
+                                const celebrationEmojis = ['✨', '🎉', '🎆', '⭐'];
+                                const randomEmoji = celebrationEmojis[j % celebrationEmojis.length];
+                                const celebrationColor = j % 2 === 0 ? colorTheme.primary : colorTheme.accent;
                                 particles.push(new Particle(order.x + order.width / 2, 
                                                            order.y + order.height / 2, 
                                                            celebrationColor, randomEmoji, 'celebration'));
@@ -2370,15 +2334,15 @@ async function handleRequest(request) {
                         combo = 1;
                         createFloatingText(x + rect.left, y + rect.top, 'WRONG!', colorTheme.warning);
                         
-                        // Screen shake and red flash for wrong ingredient
-                        startScreenShake(8, 15);
-                        startScreenFlash(colorTheme.warning, 0.4, 12);
+                        // Screen shake and red flash for wrong ingredient (simplified)
+                        startScreenShake(4, 8);
+                        startScreenFlash(colorTheme.warning, 0.2, 6);
                         vibrateError();
-                        startGlitchEffect(0.15, 8);
+                        // startGlitchEffect(0.15, 8); // DISABLED for performance
                         playIngredientWrong();
                         
-                        // Create error particles
-                        for (let j = 0; j < 5; j++) {
+                        // Create error particles (minimal)
+                        for (let j = 0; j < 2; j++) {
                             particles.push(new Particle(ingredient.x + ingredient.data.size / 2, 
                                                        ingredient.y + ingredient.data.size / 2, 
                                                        colorTheme.warning));
@@ -2602,8 +2566,8 @@ async function handleRequest(request) {
                 }
             }
 
-            // Update and draw particles (with performance limit)
-            const maxParticles = 50; // Limit total particles for performance
+            // Update and draw particles (with strict performance limit)
+            const maxParticles = 20; // Strict limit for performance during effects
             if (particles.length > maxParticles) {
                 particles.splice(0, particles.length - maxParticles);
             }
