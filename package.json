@@ -9,7 +9,9 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "build": "echo 'No build step required for static HTML game'"
+    "build": "rollup -c",
+    "build:dev": "rollup -c --environment NODE_ENV:development",
+    "build:prod": "rollup -c --environment NODE_ENV:production"
   },
   "keywords": ["game", "html5", "canvas", "burger", "restaurant"],
   "author": "",
@@ -18,6 +20,10 @@
     "wrangler": "^4.18.0",
     "vitest": "^1.0.0",
     "@vitest/coverage-v8": "^1.0.0",
-    "jsdom": "^23.0.0"
+    "jsdom": "^23.0.0",
+    "rollup": "^4.0.0",
+    "@rollup/plugin-node-resolve": "^15.0.0",
+    "@rollup/plugin-terser": "^0.4.0",
+    "rollup-plugin-string": "^3.0.0"
   }
 }
