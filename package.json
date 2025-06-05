@@ -10,9 +10,9 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "build": "echo 'Build temporarily disabled during modularization - using original worker.js'",
-    "build:dev": "echo 'Build temporarily disabled during modularization'",
-    "build:prod": "echo 'Build temporarily disabled during modularization'"
+    "build": "rollup -c",
+    "build:dev": "rollup -c --environment NODE_ENV:development",
+    "build:prod": "NODE_ENV=production rollup -c"
   },
   "keywords": ["game", "html5", "canvas", "burger", "restaurant"],
   "author": "",

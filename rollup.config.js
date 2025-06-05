@@ -5,7 +5,7 @@ import { string } from 'rollup-plugin-string';
 const isProduction = process.env.NODE_ENV === 'production';
 
 export default {
-  input: 'src/game/Game.js', // Will be our main entry point
+  input: 'src/game/worker-entry.js', // Cloudflare Worker entry point
   output: {
     file: 'src/worker.js',
     format: 'es',

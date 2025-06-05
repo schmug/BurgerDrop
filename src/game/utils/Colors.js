@@ -237,11 +237,42 @@ export const colorUtils = {
     }
 };
 
+/**
+ * Get a random color from a predefined palette
+ * @returns {string} Hex color string
+ */
+export function getRandomColor() {
+    const colors = [
+        '#FF6B6B', // Red
+        '#4ECDC4', // Teal
+        '#45B7D1', // Blue
+        '#F7DC6F', // Yellow
+        '#BB8FCE', // Purple
+        '#85C872', // Green
+        '#F8B500', // Orange
+        '#FF6F91', // Pink
+        '#6C5CE7', // Violet
+        '#00D2D3'  // Cyan
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
+}
+
+/**
+ * Get a theme color based on type
+ * @param {string} type - Type of theme color ('primary', 'secondary', 'accent', 'warning')
+ * @returns {string} Color string
+ */
+export function getThemeColor(type = 'primary') {
+    return colorTheme[type] || colorTheme.primary;
+}
+
 export default {
     colorTheme,
     updateColorTheme,
     powerUpColors,
     createTexturePattern,
     ScreenFlash,
-    colorUtils
+    colorUtils,
+    getRandomColor,
+    getThemeColor
 };

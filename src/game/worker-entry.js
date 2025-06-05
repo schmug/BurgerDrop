@@ -1,0 +1,354 @@
+// Cloudflare Worker entry point for BurgerDrop Game
+import Game from './Game.js';
+
+// Export the game class for use in the HTML
+export { Game };
+
+// Cloudflare Worker event listener
+addEventListener('fetch', event => {
+  event.respondWith(handleRequest(event.request))
+})
+
+async function handleRequest(request) {
+  const url = new URL(request.url)
+  
+  // Serve the game HTML file for all requests
+  if (url.pathname === '/' || url.pathname === '/index.html') {
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Burger Drop! - Restaurant Game</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍔</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One:wght@400&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        body {
+            font-family: 'Nunito', 'Arial', sans-serif;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(255, 215, 0, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 165, 0, 0.2) 0%, transparent 50%),
+                conic-gradient(from 45deg at 50% 50%, #87CEEB, #98D8C8, #87CEEB, #98D8C8);
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            animation: subtleShift 20s ease-in-out infinite;
+        }
+
+        #gameCanvas {
+            background: 
+                radial-gradient(ellipse at top, rgba(255, 255, 255, 0.2) 0%, transparent 70%),
+                linear-gradient(135deg, #FFE4B5 0%, #FFDEAD 50%, #DEB887 100%);
+            display: block;
+            margin: 0 auto;
+            border: 3px solid #8B4513;
+            box-shadow: 
+                0 0 20px rgba(139, 69, 19, 0.5),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .game-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .top-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border-bottom: 3px solid #8B4513;
+        }
+
+        .logo {
+            font-family: 'Fredoka One', cursive;
+            font-size: 28px;
+            color: #D2691E;
+            text-shadow: 2px 2px 4px rgba(139, 69, 19, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .score-display {
+            font-family: 'Fredoka One', cursive;
+            font-size: 24px;
+            color: #FF6347;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .audio-toggle {
+            background: #FFD700;
+            border: 3px solid #FFA500;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .audio-toggle:hover {
+            transform: scale(1.1);
+            background: #FFA500;
+        }
+
+        .audio-toggle:active {
+            transform: scale(0.95);
+        }
+
+        .game-over-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+
+        .game-over-content {
+            background: linear-gradient(135deg, #FFEAA7 0%, #FEF9E7 100%);
+            padding: 40px;
+            border-radius: 25px;
+            text-align: center;
+            box-shadow: 
+                0 10px 40px rgba(0, 0, 0, 0.3),
+                inset 0 0 30px rgba(255, 255, 255, 0.5);
+            border: 5px solid #D2691E;
+            max-width: 90%;
+            animation: popIn 0.5s ease-out;
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .game-over-title {
+            font-family: 'Fredoka One', cursive;
+            font-size: 48px;
+            color: #D2691E;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .final-score {
+            font-size: 36px;
+            color: #FF6347;
+            margin: 20px 0;
+            font-weight: 800;
+        }
+
+        .high-score {
+            font-size: 24px;
+            color: #FFA500;
+            margin: 10px 0;
+            font-weight: 700;
+        }
+
+        .play-again-btn {
+            background: linear-gradient(135deg, #FF6347 0%, #FF4500 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 24px;
+            font-family: 'Fredoka One', cursive;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 
+                0 4px 15px rgba(255, 99, 71, 0.4),
+                inset 0 -3px 0 rgba(139, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .play-again-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 6px 20px rgba(255, 99, 71, 0.5),
+                inset 0 -3px 0 rgba(139, 0, 0, 0.3);
+        }
+
+        .play-again-btn:active {
+            transform: translateY(0);
+            box-shadow: 
+                0 2px 10px rgba(255, 99, 71, 0.4),
+                inset 0 -1px 0 rgba(139, 0, 0, 0.3);
+        }
+
+        @keyframes subtleShift {
+            0%, 100% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 10px;
+                padding-top: 80px;
+            }
+            
+            .logo {
+                font-size: 20px;
+            }
+            
+            .score-display {
+                font-size: 18px;
+            }
+            
+            .audio-toggle {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+            }
+            
+            .game-over-title {
+                font-size: 36px;
+            }
+            
+            .final-score {
+                font-size: 28px;
+            }
+            
+            .play-again-btn {
+                font-size: 20px;
+                padding: 12px 30px;
+            }
+        }
+
+        /* Performance overlay styles */
+        .performance-overlay {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #0f0;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+            z-index: 3000;
+            min-width: 200px;
+        }
+
+        .performance-overlay.visible {
+            display: block;
+        }
+
+        .performance-overlay div {
+            margin: 5px 0;
+        }
+
+        .performance-overlay .label {
+            display: inline-block;
+            width: 80px;
+            color: #888;
+        }
+
+        .performance-overlay .value {
+            color: #0f0;
+        }
+
+        .performance-overlay .warning {
+            color: #ff0;
+        }
+
+        .performance-overlay .critical {
+            color: #f00;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="logo">
+            <span style="font-size: 36px;">🍔</span>
+            <span>Burger Drop!</span>
+        </div>
+        <div class="score-display" id="scoreDisplay">Score: 0</div>
+        <button class="audio-toggle" id="audioToggle" aria-label="Toggle Audio">🔊</button>
+    </div>
+
+    <div class="performance-overlay" id="performanceOverlay"></div>
+
+    <div class="game-container">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <div class="game-over-overlay" id="gameOverOverlay">
+        <div class="game-over-content">
+            <h1 class="game-over-title">Game Over! 🍔</h1>
+            <div class="final-score">Final Score: <span id="finalScore">0</span></div>
+            <div class="high-score">High Score: <span id="highScore">0</span></div>
+            <button class="play-again-btn" id="playAgainBtn">Play Again!</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { Game } from './worker.js';
+        
+        // Initialize and start the game
+        const game = new Game();
+        
+        // Wait for DOM to be ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => game.initialize());
+        } else {
+            game.initialize();
+        }
+    </script>
+</body>
+</html>`;
+
+    return new Response(html, {
+      headers: {
+        'content-type': 'text/html;charset=UTF-8',
+        'Cache-Control': 'public, max-age=3600'
+      }
+    })
+  }
+
+  // Return 404 for other paths
+  return new Response('Not Found', { status: 404 })
+}

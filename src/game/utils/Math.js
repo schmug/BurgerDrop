@@ -69,6 +69,17 @@ export function distanceSquared(x1, y1, x2, y2) {
 }
 
 /**
+ * Generate random number between min and max (inclusive)
+ * Alias for random.between for backward compatibility
+ * @param {number} min - Minimum value
+ * @param {number} max - Maximum value
+ * @returns {number} Random number
+ */
+export function randomRange(min, max) {
+    return Math.random() * (max - min) + min;
+}
+
+/**
  * Random number generation utilities
  */
 export const random = {
