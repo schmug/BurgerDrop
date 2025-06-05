@@ -4,38 +4,49 @@ import { string } from 'rollup-plugin-string';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-export default {
-  input: 'src/game/worker-entry.js', // Cloudflare Worker entry point
-  output: {
-    file: 'src/worker.js',
-    format: 'iife',
-    name: 'BurgerDropBundle',
-    banner: '// BurgerDrop Game - Built from modular source\n// Auto-generated - do not edit directly',
-    sourcemap: !isProduction
+// Two-step build process
+export default [
+  // Step 1: Build the game as an IIFE bundle
+  {
+    input: 'src/game/Game.js',
+    output: {
+      file: 'src/build/game.iife.js',
+      format: 'iife',
+      name: 'Game',
+      exports: 'default',
+      sourcemap: false
+    },
+    plugins: [
+      nodeResolve(),
+      isProduction && terser({
+        compress: {
+          drop_console: true,
+          drop_debugger: true
+        }
+      })
+    ].filter(Boolean)
   },
-  plugins: [
-    // Handle CSS and HTML as strings
-    string({
-      include: ['**/*.css', '**/*.html']
-    }),
-    
-    // Resolve node modules
-    nodeResolve(),
-    
-    // Minify in production
-    isProduction && terser({
-      compress: {
-        drop_console: true,
-        drop_debugger: true
-      }
-    })
-  ].filter(Boolean),
   
-  // External dependencies (don't bundle these)
-  external: [],
-  
-  // Watch files for development
-  watch: {
-    include: 'src/**'
+  // Step 2: Build the worker
+  {
+    input: 'src/game/worker-final.js',
+    output: {
+      file: 'src/worker.js',
+      format: 'es',
+      banner: '// BurgerDrop Game - Built from modular source\n// Auto-generated - do not edit directly',
+      sourcemap: !isProduction
+    },
+    plugins: [
+      string({
+        include: ['**/*.css', '**/*.html', '**/*.iife.js']
+      }),
+      nodeResolve(),
+      isProduction && terser({
+        compress: {
+          drop_console: true,
+          drop_debugger: true
+        }
+      })
+    ].filter(Boolean)
   }
-};
+];

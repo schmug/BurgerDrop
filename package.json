@@ -14,17 +14,24 @@
     "build:dev": "rollup -c --environment NODE_ENV:development",
     "build:prod": "NODE_ENV=production rollup -c"
   },
-  "keywords": ["game", "html5", "canvas", "burger", "restaurant"],
+  "keywords": [
+    "game",
+    "html5",
+    "canvas",
+    "burger",
+    "restaurant"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "wrangler": "^4.18.0",
-    "vitest": "^1.0.0",
+    "@rollup/plugin-node-resolve": "^15.0.0",
+    "@rollup/plugin-replace": "^6.0.2",
+    "@rollup/plugin-terser": "^0.4.0",
     "@vitest/coverage-v8": "^1.0.0",
     "jsdom": "^23.0.0",
     "rollup": "^4.0.0",
-    "@rollup/plugin-node-resolve": "^15.0.0",
-    "@rollup/plugin-terser": "^0.4.0",
-    "rollup-plugin-string": "^3.0.0"
+    "rollup-plugin-string": "^3.0.0",
+    "vitest": "^1.0.0",
+    "wrangler": "^4.18.0"
   }
 }

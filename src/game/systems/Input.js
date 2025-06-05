@@ -424,3 +424,4 @@ export class InputSystem {
         }
     }
 }
+export default InputSystem;
