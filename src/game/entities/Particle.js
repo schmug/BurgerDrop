@@ -18,7 +18,20 @@ export class Particle {
      * @param {string} type - Particle type ('default', 'celebration', 'star', 'circle', 'triangle')
      * @param {object} options - Additional options
      */
-    constructor(x, y, color, text = '', type = 'default', options = {}) {
+    constructor(x = 0, y = 0, color = '#FFFFFF', text = '', type = 'default', options = {}) {
+        this.init(x, y, color, text, type, options);
+    }
+    
+    /**
+     * Initialize/reset particle properties (used for object pooling)
+     * @param {number} x - Initial x position
+     * @param {number} y - Initial y position
+     * @param {string} color - Particle color
+     * @param {string} text - Optional text/emoji to display
+     * @param {string} type - Particle type
+     * @param {object} options - Additional options
+     */
+    init(x = 0, y = 0, color = '#FFFFFF', text = '', type = 'default', options = {}) {
         this.x = x;
         this.y = y;
         this.vx = options.vx || (Math.random() - 0.5) * 6;
@@ -40,6 +53,11 @@ export class Particle {
         // Store canvas dimensions for boundary checks
         this.canvasWidth = options.canvasWidth || 800;
         this.canvasHeight = options.canvasHeight || 600;
+        
+        // Pool-friendly properties
+        this.pooled = false;
+        
+        return this;
     }
 
     /**
@@ -164,6 +182,39 @@ export class Particle {
     isAlive() {
         return this.life > 0.01;
     }
+    
+    /**
+     * Reset particle for object pooling
+     * @param {number} x - Initial x position
+     * @param {number} y - Initial y position
+     * @param {string} color - Particle color
+     * @param {string} text - Optional text/emoji to display
+     * @param {string} type - Particle type
+     * @param {object} options - Additional options
+     */
+    reset(x, y, color, text = '', type = 'default', options = {}) {
+        this.x = x;
+        this.y = y;
+        this.vx = options.vx || (Math.random() - 0.5) * 6;
+        this.vy = options.vy || (-Math.random() * 6 - 3);
+        this.color = color;
+        this.text = text;
+        this.life = 1;
+        this.decay = options.decay || 0.015;
+        this.type = type;
+        this.size = options.size || (Math.random() * 3 + 2);
+        this.rotation = Math.random() * Math.PI * 2;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.2;
+        this.gravity = options.gravity || 0.15;
+        this.bounce = options.bounce || 0.7;
+        this.scale = 1;
+        this.startTime = 0;
+        this.duration = options.duration || (60 + Math.random() * 60);
+        
+        // Update canvas dimensions if provided
+        if (options.canvasWidth) this.canvasWidth = options.canvasWidth;
+        if (options.canvasHeight) this.canvasHeight = options.canvasHeight;
+    }
 
     /**
      * Get particle bounds for collision detection
@@ -238,6 +289,28 @@ export class Particle {
         return particles;
     }
 
+    /**
+     * Reset function for object pooling
+     * @param {Particle} particle - Particle to reset
+     * @param {number} x - Initial x position
+     * @param {number} y - Initial y position
+     * @param {string} color - Particle color
+     * @param {string} text - Optional text/emoji to display
+     * @param {string} type - Particle type
+     * @param {object} options - Additional options
+     */
+    static resetParticle(particle, x, y, color, text = '', type = 'default', options = {}) {
+        particle.init(x, y, color, text, type, options);
+    }
+    
+    /**
+     * Create particle factory function for object pooling
+     * @returns {Function} Factory function that creates new particles
+     */
+    static createFactory() {
+        return () => new Particle();
+    }
+    
     /**
      * Create floating text particle
      * @param {number} x - X position

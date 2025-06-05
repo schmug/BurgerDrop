@@ -10,11 +10,13 @@ import { Ingredient } from './entities/Ingredient.js';
 import { Order } from './entities/Order.js';
 import AudioSystem from './systems/Audio.js';
 import Renderer from './systems/Renderer.js';
-import InputSystem from './systems/Input.js';
+import { InputSystem } from './systems/Input.js';
 import PhysicsSystem from './systems/Physics.js';
 import { easing } from './utils/Easing.js';
 import { getRandomColor, getThemeColor } from './utils/Colors.js';
 import { clamp, lerp, randomRange } from './utils/Math.js';
+import { ObjectPool, PoolManager } from './utils/ObjectPool.js';
+import PerformanceMonitor from './utils/PerformanceMonitor.js';
 
 /**
  * Main Game class that manages the game loop and coordinates all systems
@@ -41,21 +43,28 @@ export default class Game {
         };
         
         // Initialize game state
-        this.state = new GameState({
-            lives: this.config.initialLives
-        });
+        this.state = new GameState();
+        this.state.core.lives = this.config.initialLives;
         
         // Initialize systems
         this.audioSystem = new AudioSystem();
-        this.renderer = new Renderer(this.ctx);
+        this.renderer = new Renderer(this.canvas);
         this.inputSystem = new InputSystem(this.canvas);
         this.physicsSystem = new PhysicsSystem();
+        this.performanceMonitor = new PerformanceMonitor({
+            enabled: options.enablePerformanceMonitoring !== false,
+            debugMode: options.debugPerformance || false
+        });
         
         // Entity arrays
         this.ingredients = [];
         this.orders = [];
         this.particles = [];
         this.powerUps = [];
+        
+        // Initialize object pools
+        this.poolManager = new PoolManager();
+        this.initializeObjectPools();
         
         // Game loop variables
         this.animationId = null;
@@ -95,11 +104,106 @@ export default class Game {
     }
     
     /**
+     * Initialize object pools for frequently created objects
+     */
+    initializeObjectPools() {
+        // Particle pool for general particles
+        this.poolManager.createPool('particle',
+            Particle.createFactory(),
+            Particle.resetParticle,
+            50, // initial size
+            200 // max size
+        );
+        
+        // Celebration particle pool (for special effects)
+        this.poolManager.createPool('celebrationParticle',
+            Particle.createFactory(),
+            Particle.resetParticle,
+            20, // initial size
+            100 // max size
+        );
+        
+        // Ingredient pool
+        this.poolManager.createPool('ingredient',
+            () => new Ingredient('bun_top', { canvasWidth: this.canvas.width, canvasHeight: this.canvas.height }),
+            (ingredient, type, options = {}) => {
+                ingredient.init(type, {
+                    ...options,
+                    canvasWidth: this.canvas.width,
+                    canvasHeight: this.canvas.height
+                });
+            },
+            15, // initial size
+            50  // max size
+        );
+        
+        // Setup performance monitoring callbacks
+        this.setupPerformanceCallbacks();
+    }
+    
+    /**
+     * Setup performance monitoring callbacks
+     */
+    setupPerformanceCallbacks() {
+        // Listen for performance level changes
+        this.performanceMonitor.on('performanceLevelChanged', (data) => {
+            const { newLevel, settings } = data;
+            console.log(`Performance level changed to: ${newLevel}`);
+            
+            // Apply new quality settings
+            this.applyQualitySettings(settings);
+        });
+        
+        // Listen for frame drops
+        this.performanceMonitor.on('frameDropDetected', (data) => {
+            if (this.config.debugPerformance) {
+                console.warn(`Frame drop detected: ${data.frameTime.toFixed(2)}ms`);
+            }
+        });
+    }
+    
+    /**
+     * Apply quality settings based on performance level
+     * @param {Object} settings - Quality settings to apply
+     */
+    applyQualitySettings(settings) {
+        // Update renderer settings
+        this.renderer.setFeature('shadows', settings.enableShadows);
+        this.renderer.setFeature('textures', settings.enableTextures);
+        this.renderer.setFeature('effects', settings.enableEffects);
+        
+        // Update particle limits
+        this.maxParticles = settings.maxParticles;
+        
+        // Update pool sizes based on performance level
+        const particlePool = this.poolManager.getPool('particle');
+        const celebrationPool = this.poolManager.getPool('celebrationParticle');
+        
+        if (particlePool) {
+            particlePool.resize(Math.floor(settings.maxParticles * 1.5));
+        }
+        if (celebrationPool) {
+            celebrationPool.resize(Math.floor(settings.maxParticles * 0.5));
+        }
+        
+        // Trim excess particles if we're over the new limit
+        if (this.particles.length > settings.maxParticles) {
+            const excessParticles = this.particles.splice(settings.maxParticles);
+            excessParticles.forEach(particle => {
+                if (particle.type === 'celebration') {
+                    this.poolManager.release('celebrationParticle', particle);
+                } else {
+                    this.poolManager.release('particle', particle);
+                }
+            });
+        }
+    }
+    
+    /**
      * Setup input event handlers
      */
     setupInputHandlers() {
-        this.inputSystem.on('tap', this.handleInput);
-        this.inputSystem.on('click', this.handleInput);
+        this.unregisterClick = this.inputSystem.onClick((event) => this.handleInput(event));
     }
     
     /**
@@ -150,13 +254,14 @@ export default class Game {
         const centerY = powerUp.y + powerUp.size / 2;
         
         for (let i = 0; i < 3; i++) {
-            this.particles.push(new Particle(
+            const particle = this.poolManager.get('celebrationParticle',
                 centerX + randomRange(-50, 50),
                 centerY + randomRange(-50, 50),
                 powerUp.data.color,
                 powerUp.data.emoji,
-                'celebration'
-            ));
+                {}
+            );
+            this.particles.push(particle);
         }
         
         // Remove power-up
@@ -196,13 +301,15 @@ export default class Game {
                 
                 // Create success particles
                 for (let i = 0; i < 5; i++) {
-                    this.particles.push(new Particle(
+                    const particle = this.poolManager.get('particle',
                         ingredient.x + ingredient.data.size / 2,
                         ingredient.y + ingredient.data.size / 2,
                         '#00FF00',
                         '',
-                        'star'
-                    ));
+                        'star',
+                        {}
+                    );
+                    this.particles.push(particle);
                 }
             }
             
@@ -221,19 +328,22 @@ export default class Game {
             
             // Create error particles
             for (let i = 0; i < 3; i++) {
-                this.particles.push(new Particle(
+                const particle = this.poolManager.get('particle',
                     ingredient.x + ingredient.data.size / 2,
                     ingredient.y + ingredient.data.size / 2,
                     '#FF0000',
                     '✗',
-                    'default'
-                ));
+                    'default',
+                    {}
+                );
+                this.particles.push(particle);
             }
         }
         
         // Remove ingredient
         ingredient.collected = true;
         this.ingredients.splice(index, 1);
+        this.poolManager.release('ingredient', ingredient);
     }
     
     /**
@@ -284,15 +394,16 @@ export default class Game {
         for (let i = 0; i < 10; i++) {
             const angle = (i / 10) * Math.PI * 2;
             const speed = randomRange(3, 6);
-            const particle = new Particle(
+            const particle = this.poolManager.get('celebrationParticle',
                 orderCenterX,
                 orderCenterY,
                 getRandomColor(),
                 '⭐',
-                'celebration'
+                {
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed
+                }
             );
-            particle.vx = Math.cos(angle) * speed;
-            particle.vy = Math.sin(angle) * speed;
             this.particles.push(particle);
         }
         
@@ -345,7 +456,7 @@ export default class Game {
             if (order.currentIndex < order.ingredients.length) {
                 possibleTypes.add(order.ingredients[order.currentIndex]);
                 // Add some random ingredients for challenge
-                const ingredientTypes = Object.keys(Ingredient.getIngredientTypes());
+                const ingredientTypes = Ingredient.getAvailableTypes();
                 const randomType = ingredientTypes[Math.floor(Math.random() * ingredientTypes.length)];
                 possibleTypes.add(randomType);
             }
@@ -354,7 +465,12 @@ export default class Game {
         if (possibleTypes.size > 0) {
             const typesArray = Array.from(possibleTypes);
             const type = typesArray[Math.floor(Math.random() * typesArray.length)];
-            const ingredient = new Ingredient(type);
+            
+            // Get ingredient from pool
+            const ingredient = this.poolManager.get('ingredient', type, {
+                canvasWidth: this.canvas.width,
+                canvasHeight: this.canvas.height
+            });
             
             // Apply current speed with difficulty scaling
             const difficultyMultiplier = 1 + (this.state.score * this.config.difficultyIncreaseRate);
@@ -401,7 +517,9 @@ export default class Game {
         this.state.update(deltaTime);
         
         // Update color theme
-        this.renderer.updateColorTheme(this.state.combo, this.state.score, this.frameCount);
+        if (this.renderer.updateColorTheme) {
+            this.renderer.updateColorTheme(this.state.combo, this.state.score, this.frameCount);
+        }
         
         // Spawn entities
         if (this.frameCount - this.lastSpawn > this.config.spawnRate) {
@@ -425,6 +543,7 @@ export default class Game {
             // Remove if off screen
             if (ingredient.y > this.canvas.height + 50) {
                 this.ingredients.splice(i, 1);
+                this.poolManager.release('ingredient', ingredient);
             }
         }
         
@@ -452,6 +571,12 @@ export default class Game {
             
             if (particle.life <= 0) {
                 this.particles.splice(i, 1);
+                // Release back to appropriate pool
+                if (particle.type === 'celebration') {
+                    this.poolManager.release('celebrationParticle', particle);
+                } else {
+                    this.poolManager.release('particle', particle);
+                }
             }
         }
         
@@ -522,13 +647,17 @@ export default class Game {
             this.lastTime = currentTime;
         }
         
+        // Update performance monitoring
+        this.performanceMonitor.update(currentTime);
+        
         this.deltaTime = currentTime - this.lastTime;
         this.lastTime = currentTime;
+        this.frameCount++;
         
         this.update(this.deltaTime);
         this.render();
         
-        this.animationId = requestAnimationFrame(this.gameLoop);
+        this.animationId = requestAnimationFrame((time) => this.gameLoop(time));
     }
     
     /**
@@ -649,7 +778,21 @@ export default class Game {
         }
         
         // Reset game state
-        this.state.reset();
+        this.state.startGame();
+        
+        // Release all entities back to pools
+        this.particles.forEach(particle => {
+            if (particle.type === 'celebration') {
+                this.poolManager.release('celebrationParticle', particle);
+            } else {
+                this.poolManager.release('particle', particle);
+            }
+        });
+        this.ingredients.forEach(ingredient => {
+            this.poolManager.release('ingredient', ingredient);
+        });
+        
+        // Clear arrays
         this.ingredients = [];
         this.orders = [];
         this.particles = [];
@@ -700,7 +843,31 @@ export default class Game {
      */
     resize() {
         // Canvas will be resized externally
-        // Just update any size-dependent calculations here
+        // Update canvas dimensions in pools
+        const ingredientPool = this.poolManager.getPool('ingredient');
+        if (ingredientPool) {
+            ingredientPool.config.canvasWidth = this.canvas.width;
+            ingredientPool.config.canvasHeight = this.canvas.height;
+        }
+    }
+    
+    /**
+     * Get object pool statistics for debugging
+     * @returns {Object} Pool statistics
+     */
+    getPoolStats() {
+        return this.poolManager.getAllStats();
+    }
+    
+    /**
+     * Log pool statistics to console
+     */
+    logPoolStats() {
+        const stats = this.getPoolStats();
+        console.log('Object Pool Statistics:');
+        Object.entries(stats).forEach(([poolName, poolStats]) => {
+            console.log(`  ${poolName}:`, poolStats);
+        });
     }
     
     /**
@@ -712,14 +879,30 @@ export default class Game {
         this.audioSystem.destroy();
         
         // Remove event listeners
-        this.inputSystem.off('tap', this.handleInput);
-        this.inputSystem.off('click', this.handleInput);
+        if (this.unregisterClick) {
+            this.unregisterClick();
+        }
+        
+        // Release all pooled objects
+        this.particles.forEach(particle => {
+            if (particle.type === 'celebration') {
+                this.poolManager.release('celebrationParticle', particle);
+            } else {
+                this.poolManager.release('particle', particle);
+            }
+        });
+        this.ingredients.forEach(ingredient => {
+            this.poolManager.release('ingredient', ingredient);
+        });
         
         // Clear references
         this.ingredients = [];
         this.orders = [];
         this.particles = [];
         this.powerUps = [];
+        
+        // Clear all pools
+        this.poolManager.clearAll();
     }
 }
 

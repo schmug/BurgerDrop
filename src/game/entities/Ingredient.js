@@ -89,7 +89,16 @@ export class Ingredient {
      * @param {string} type - Ingredient type key from ingredientTypes
      * @param {object} options - Additional options
      */
-    constructor(type, options = {}) {
+    constructor(type = 'bun_top', options = {}) {
+        this.init(type, options);
+    }
+    
+    /**
+     * Initialize/reset ingredient properties (used for object pooling)
+     * @param {string} type - Ingredient type key from ingredientTypes
+     * @param {object} options - Additional options
+     */
+    init(type, options = {}) {
         this.type = type;
         this.data = ingredientTypes[type];
         
@@ -348,6 +357,54 @@ export class Ingredient {
     updateCanvasDimensions(width, height) {
         this.canvasWidth = width;
         this.canvasHeight = height;
+    }
+    
+    /**
+     * Reset ingredient for object pooling
+     * @param {string} type - Ingredient type key from ingredientTypes
+     * @param {object} options - Additional options
+     */
+    reset(type, options = {}) {
+        this.type = type;
+        this.data = ingredientTypes[type];
+        
+        if (!this.data) {
+            throw new Error(`Unknown ingredient type: ${type}`);
+        }
+        
+        // Position and movement
+        this.x = options.x !== undefined ? options.x : Math.random() * ((options.canvasWidth || this.canvasWidth || 800) - this.data.size);
+        this.y = options.y !== undefined ? options.y : -this.data.size;
+        
+        // Speed calculation with variation
+        const baseSpeed = options.baseSpeed || 4;
+        const speedVariation = Math.random() * 4 - 2;
+        const speedMultiplier = Math.random() < 0.1 ? (Math.random() < 0.5 ? 0.4 : 2.2) : 1;
+        this.speed = (baseSpeed + speedVariation) * speedMultiplier;
+        this.baseSpeed = this.speed;
+        
+        // Rotation
+        this.rotation = Math.random() * Math.PI * 2;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.1;
+        
+        // State
+        this.collected = false;
+        this.startY = this.y;
+        this.fallProgress = 0;
+        this.sway = Math.random() * 2 - 1;
+        
+        // Trail system
+        this.trail = [];
+        this.maxTrailLength = options.maxTrailLength || 8;
+        this.trailUpdateInterval = options.trailUpdateInterval || 3;
+        this.trailCounter = 0;
+        
+        // Animation timing
+        this.animationTime = 0;
+        
+        // Update canvas dimensions if provided
+        if (options.canvasWidth) this.canvasWidth = options.canvasWidth;
+        if (options.canvasHeight) this.canvasHeight = options.canvasHeight;
     }
     
     /**

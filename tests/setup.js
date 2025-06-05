@@ -40,6 +40,7 @@ const mockCanvasContext = {
   arc: vi.fn(),
   ellipse: vi.fn(),
   bezierCurveTo: vi.fn(),
+  quadraticCurveTo: vi.fn(),
   measureText: vi.fn(() => ({ width: 10 })),
   transform: vi.fn(),
   rect: vi.fn(),
