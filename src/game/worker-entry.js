@@ -2,8 +2,12 @@
 import Game from './Game.js';
 import { getGameHTML } from './templates/Template.js';
 
-// Export the game class for use in the HTML
-export { Game };
+// Make Game available globally for the HTML
+if (typeof window !== 'undefined') {
+  window.Game = Game;
+} else if (typeof globalThis !== 'undefined') {
+  globalThis.Game = Game;
+}
 
 // Cloudflare Worker event listener
 addEventListener('fetch', event => {
@@ -28,3 +32,6 @@ async function handleRequest(request) {
   // Return 404 for other paths
   return new Response('Not Found', { status: 404 })
 }
+
+// Export Game so it's included in the bundle
+export { Game };

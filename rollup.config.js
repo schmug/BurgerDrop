@@ -8,7 +8,8 @@ export default {
   input: 'src/game/worker-entry.js', // Cloudflare Worker entry point
   output: {
     file: 'src/worker.js',
-    format: 'es',
+    format: 'iife',
+    name: 'BurgerDropBundle',
     banner: '// BurgerDrop Game - Built from modular source\n// Auto-generated - do not edit directly',
     sourcemap: !isProduction
   },

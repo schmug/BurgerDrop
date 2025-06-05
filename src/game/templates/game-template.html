@@ -38,43 +38,17 @@
     </div>
 
     <script>
-        // Wait for DOM to be ready before initializing the game
-        function initGame() {
-            const canvas = document.getElementById('gameCanvas');
-            if (canvas && typeof Game !== 'undefined') {
-                const game = new Game(canvas, {
-                    enablePerformanceMonitoring: false,
-                    showPerformanceUI: false
-                });
-                game.start();
-                
-                // Setup UI event handlers
-                const audioToggle = document.getElementById('audioToggle');
-                const playAgainBtn = document.getElementById('playAgainBtn');
-                
-                if (audioToggle) {
-                    audioToggle.addEventListener('click', () => {
-                        game.audioSystem.setEnabled(!game.audioSystem.isEnabled());
-                        audioToggle.textContent = game.audioSystem.isEnabled() ? '🔊' : '🔇';
-                    });
-                }
-                
-                if (playAgainBtn) {
-                    playAgainBtn.addEventListener('click', () => {
-                        document.getElementById('gameOverOverlay').style.display = 'none';
-                        game.start();
-                    });
-                }
-                
-                // Make game available globally for debugging
-                window.game = game;
-            }
-        }
+        // Game code will be injected here by the build process
+        {{GAME_SCRIPT}}
         
+        // Initialize and start the game after all code is loaded
+        const game = new Game();
+        
+        // Wait for DOM to be ready
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initGame);
+            document.addEventListener('DOMContentLoaded', () => game.initialize());
         } else {
-            initGame();
+            game.initialize();
         }
     </script>
 </body>
