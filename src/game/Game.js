@@ -17,6 +17,7 @@ import { getRandomColor, getThemeColor } from './utils/Colors.js';
 import { clamp, lerp, randomRange } from './utils/Math.js';
 import { ObjectPool, PoolManager } from './utils/ObjectPool.js';
 import PerformanceMonitor from './utils/PerformanceMonitor.js';
+import PerformanceUI from './utils/PerformanceUI.js';
 
 /**
  * Main Game class that manages the game loop and coordinates all systems
@@ -54,6 +55,15 @@ export default class Game {
         this.performanceMonitor = new PerformanceMonitor({
             enabled: options.enablePerformanceMonitoring !== false,
             debugMode: options.debugPerformance || false
+        });
+        this.performanceUI = new PerformanceUI({
+            enabled: options.showPerformanceUI || false,
+            position: options.performanceUIPosition || 'top-right',
+            showFPS: true,
+            showPools: true,
+            showQuality: true,
+            showDetails: options.debugPerformance || false,
+            showGraph: options.debugPerformance || false
         });
         
         // Entity arrays
@@ -139,6 +149,9 @@ export default class Game {
         
         // Setup performance monitoring callbacks
         this.setupPerformanceCallbacks();
+        
+        // Initialize performance UI
+        this.performanceUI.init(this.performanceMonitor, this.poolManager);
     }
     
     /**
@@ -657,6 +670,14 @@ export default class Game {
         this.update(this.deltaTime);
         this.render();
         
+        // Update performance UI
+        this.performanceUI.update(currentTime, {
+            particles: this.particles,
+            ingredients: this.ingredients,
+            powerUps: this.powerUps,
+            renderer: this.renderer
+        });
+        
         this.animationId = requestAnimationFrame((time) => this.gameLoop(time));
     }
     
@@ -826,6 +847,27 @@ export default class Game {
     }
     
     /**
+     * Toggle performance UI display
+     */
+    togglePerformanceUI() {
+        this.performanceUI.toggle();
+    }
+    
+    /**
+     * Show performance UI
+     */
+    showPerformanceUI() {
+        this.performanceUI.show();
+    }
+    
+    /**
+     * Hide performance UI
+     */
+    hidePerformanceUI() {
+        this.performanceUI.hide();
+    }
+    
+    /**
      * Pause/unpause the game
      */
     pause() {
@@ -903,6 +945,9 @@ export default class Game {
         
         // Clear all pools
         this.poolManager.clearAll();
+        
+        // Cleanup performance UI
+        this.performanceUI.destroy();
     }
 }
 

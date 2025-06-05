@@ -322,6 +322,21 @@ export class AudioSystem {
     }
     
     /**
+     * Alias methods for backward compatibility
+     */
+    playCollect() {
+        this.playIngredientCorrect();
+    }
+    
+    playError() {
+        this.playIngredientWrong();
+    }
+    
+    playNewOrder() {
+        this.playButtonClick();
+    }
+    
+    /**
      * Start background music
      */
     startBackgroundMusic() {
