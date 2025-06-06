@@ -131,8 +131,13 @@ var Game = (function () {
          * @param {number} deltaTime - Time elapsed since last update in seconds
          */
         update(deltaTime) {
+            // Advance frame counter and timestamp
             this.updateFrameCount(deltaTime);
+
+            // Update active power-up timers
             this.updatePowerUps(deltaTime);
+
+            // Recalculate level based on score
             this.updateLevel();
         }
 
@@ -6063,8 +6068,8 @@ var Game = (function () {
             // Clear canvas
             this.renderer.clear(this.canvas.width, this.canvas.height);
             
-            // Apply screen shake
-            this.renderer.applyScreenShake();
+            // Screen shake is applied via updateScreenShake
+            // (legacy applyScreenShake call removed)
             
             // Draw background
             this.renderer.drawBackground(this.canvas.width, this.canvas.height);
@@ -6089,8 +6094,9 @@ var Game = (function () {
                 particle.draw(this.ctx, this.frameCount);
             });
             
-            // Apply screen flash
-            this.renderer.applyScreenFlash(this.canvas.width, this.canvas.height);
+
+            // Draw overlay effects like flashes and ripples
+            this.renderer.drawScreenEffects();
             
             // Reset transform
             this.ctx.setTransform(1, 0, 0, 1, 0, 0);
