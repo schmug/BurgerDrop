@@ -127,6 +127,16 @@ var Game = (function () {
         }
 
         /**
+         * Update overall game state each frame
+         * @param {number} deltaTime - Time elapsed since last update in seconds
+         */
+        update(deltaTime) {
+            this.updateFrameCount(deltaTime);
+            this.updatePowerUps(deltaTime);
+            this.updateLevel();
+        }
+
+        /**
          * Entity management
          */
         addEntity(type, entity) {
