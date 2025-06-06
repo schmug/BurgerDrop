@@ -16,9 +16,9 @@ async function handleRequest(request) {
     // Build the HTML with CSS injected
     let html = htmlTemplate.replace('{{CSS_CONTENT}}', cssContent);
     
-    // Inject the game bundle before the closing body tag
+    // Inject the game bundle before the inline initialization script
     const gameScript = `<script>${gameBundle}</script>`;
-    html = html.replace('</body>', `${gameScript}</body>`);
+    html = html.replace('<script>', `${gameScript}<script>`);
 
     return new Response(html, {
       headers: {
