@@ -6017,7 +6017,9 @@ var Game = (function () {
                     // Order expired
                     this.orders.splice(i, 1);
                     this.state.loseLife();
-                    this.audioSystem.playOrderExpire();
+                    if (typeof this.audioSystem.playOrderExpired === 'function') {
+                        this.audioSystem.playOrderExpired();
+                    }
                     this.renderer.startScreenShake(20, 30);
                     
                     // Check game over
