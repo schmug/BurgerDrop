@@ -3,10 +3,12 @@ import htmlTemplate from './templates/index.html';
 import cssContent from './templates/styles.css';
 import gameBundle from '../build/game.iife.js';
 
-// Cloudflare Worker event listener
-addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request))
-})
+// Export fetch handler for module worker syntax
+export default {
+  async fetch(request) {
+    return handleRequest(request)
+  }
+}
 
 async function handleRequest(request) {
   const url = new URL(request.url)
@@ -16,9 +18,9 @@ async function handleRequest(request) {
     // Build the HTML with CSS injected
     let html = htmlTemplate.replace('{{CSS_CONTENT}}', cssContent);
     
-    // Inject the game bundle before the closing body tag
+    // Inject the game bundle before the inline initialization script
     const gameScript = `<script>${gameBundle}</script>`;
-    html = html.replace('</body>', `${gameScript}</body>`);
+    html = html.replace('<script>', `${gameScript}<script>`);
 
     return new Response(html, {
       headers: {
