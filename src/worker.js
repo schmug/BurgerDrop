@@ -8,10 +8,12 @@ var gameBundle = "var Game = (function () {\n    'use strict';\n\n    /**\n     
 
 // Cloudflare Worker - Final bundled version
 
-// Cloudflare Worker event listener
-addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request));
-});
+// Export fetch handler for module worker syntax
+var workerFinal = {
+  async fetch(request) {
+    return handleRequest(request)
+  }
+};
 
 async function handleRequest(request) {
   const url = new URL(request.url);
@@ -36,4 +38,6 @@ async function handleRequest(request) {
   // Return 404 for other paths
   return new Response('Not Found', { status: 404 })
 }
+
+export { workerFinal as default };
 //# sourceMappingURL=worker.js.map

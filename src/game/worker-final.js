@@ -3,10 +3,12 @@ import htmlTemplate from './templates/index.html';
 import cssContent from './templates/styles.css';
 import gameBundle from '../build/game.iife.js';
 
-// Cloudflare Worker event listener
-addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request))
-})
+// Export fetch handler for module worker syntax
+export default {
+  async fetch(request) {
+    return handleRequest(request)
+  }
+}
 
 async function handleRequest(request) {
   const url = new URL(request.url)
