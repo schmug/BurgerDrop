@@ -27,13 +27,13 @@ export default [
     ].filter(Boolean)
   },
   
-  // Step 2: Build the worker
+  // Step 2: Build the Cloudflare worker that serves the static game
   {
-    input: 'src/game/worker-final.js',
+    input: 'src/game/worker-static.js',
     output: {
       file: 'src/worker.js',
       format: 'es',
-      banner: '// BurgerDrop Game - Built from modular source\n// Auto-generated - do not edit directly',
+      banner: '// BurgerDrop Game - Static worker build\n// Auto-generated - do not edit directly',
       sourcemap: !isProduction
     },
     plugins: [

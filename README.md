@@ -86,6 +86,12 @@ npm run test:coverage
 npm run deploy
 ```
 
+### Local Testing
+
+A standalone build is included for quick local play. After cloning and
+installing dependencies, open `index.html` in your browser. The page loads the
+prebuilt bundle from `src/build/game.iife.js` so no server is required.
+
 ## 🌐 Deployment
 
 ### Cloudflare Workers Setup
@@ -104,6 +110,7 @@ npm run deploy
    ```bash
    npm run deploy
    ```
+   This uploads `index.html` and the game bundle to Cloudflare and serves them via a lightweight Worker.
 
 ### GitHub Actions (Automatic Deployment)
 
@@ -149,7 +156,7 @@ npm run test:coverage
 
 ## 🔧 Architecture
 
-- **Single File Deployment**: HTML embedded directly in Cloudflare Worker
+- **Static Deployment**: index.html served by Cloudflare Worker
 - **Entity System**: Object-oriented design with Ingredient, Order, Particle, and PowerUp classes
 - **Game Loop**: RequestAnimationFrame-based loop with delta time calculations
 - **Performance Optimized**: Automatic particle culling and frame-rate aware animations

@@ -1,7 +1,5 @@
-// BurgerDrop Game - Static worker build
-// Auto-generated - do not edit directly
-import indexHtml from '../index.html';
-import gameBundle from './build/game.iife.js';
+import indexHtml from '../../index.html';
+import gameBundle from '../build/game.iife.js';
 
 export default {
   async fetch(request) {
@@ -25,4 +23,3 @@ export default {
     return new Response('Not Found', { status: 404 });
   }
 };
-//# sourceMappingURL=worker.js.map
