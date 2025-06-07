@@ -124,6 +124,21 @@ export class GameState {
     }
 
     /**
+     * Update overall game state each frame
+     * @param {number} deltaTime - Time elapsed since last update in seconds
+     */
+    update(deltaTime) {
+        // Advance frame counter and timestamp
+        this.updateFrameCount(deltaTime);
+
+        // Update active power-up timers
+        this.updatePowerUps(deltaTime);
+
+        // Recalculate level based on score
+        this.updateLevel();
+    }
+
+    /**
      * Entity management
      */
     addEntity(type, entity) {
