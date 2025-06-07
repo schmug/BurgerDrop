@@ -7,7 +7,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 export default {
   input: 'src/game/Game.js',
   output: {
-    file: 'src/build/game.iife.js',
+    file: 'src/build/game.js',
     format: 'iife',
     name: 'Game',
     exports: 'default',

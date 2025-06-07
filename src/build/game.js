@@ -1,322 +1,3 @@
-// Cloudflare Worker template
-// This file will be processed by build-worker.js to inject CSS and game bundle
-
-export default {
-  async fetch(request, env, ctx) {
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Burger Drop! - Restaurant Game</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍔</text></svg>">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One:wght@400&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <style>
-/* BurgerDrop Game Styles */
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
-}
-
-body {
-    font-family: 'Nunito', 'Arial', sans-serif;
-    background: 
-        radial-gradient(circle at 20% 80%, rgba(255, 215, 0, 0.3) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(255, 165, 0, 0.2) 0%, transparent 50%),
-        conic-gradient(from 45deg at 50% 50%, #87CEEB, #98D8C8, #87CEEB, #98D8C8);
-    overflow: hidden;
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    animation: subtleShift 20s ease-in-out infinite;
-}
-
-#gameCanvas {
-    background: 
-        radial-gradient(ellipse at top, rgba(255, 255, 255, 0.2) 0%, transparent 70%),
-        linear-gradient(135deg, #FFE4B5 0%, #FFDEAD 50%, #DEB887 100%);
-    display: block;
-    margin: 0 auto;
-    border: 3px solid #8B4513;
-    box-shadow: 
-        0 0 20px rgba(139, 69, 19, 0.5),
-        inset 0 0 20px rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    transition: transform 0.3s ease;
-}
-
-.game-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 20px;
-}
-
-.top-bar {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    background: rgba(255, 255, 255, 0.95);
-    padding: 15px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    backdrop-filter: blur(10px);
-    border-bottom: 3px solid #8B4513;
-}
-
-.logo {
-    font-family: 'Fredoka One', cursive;
-    font-size: 28px;
-    color: #D2691E;
-    text-shadow: 2px 2px 4px rgba(139, 69, 19, 0.3);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.score-display {
-    font-family: 'Fredoka One', cursive;
-    font-size: 24px;
-    color: #FF6347;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.audio-toggle {
-    background: #FFD700;
-    border: 3px solid #FFA500;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    font-size: 24px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-}
-
-.audio-toggle:hover {
-    transform: scale(1.1);
-    background: #FFA500;
-}
-
-.audio-toggle:active {
-    transform: scale(0.95);
-}
-
-.game-over-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.85);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 2000;
-    backdrop-filter: blur(5px);
-}
-
-.game-over-content {
-    background: linear-gradient(135deg, #FFEAA7 0%, #FEF9E7 100%);
-    padding: 40px;
-    border-radius: 25px;
-    text-align: center;
-    box-shadow: 
-        0 10px 40px rgba(0, 0, 0, 0.3),
-        inset 0 0 30px rgba(255, 255, 255, 0.5);
-    border: 5px solid #D2691E;
-    max-width: 90%;
-    animation: popIn 0.5s ease-out;
-}
-
-@keyframes popIn {
-    from {
-        transform: scale(0.8);
-        opacity: 0;
-    }
-    to {
-        transform: scale(1);
-        opacity: 1;
-    }
-}
-
-.game-over-title {
-    font-family: 'Fredoka One', cursive;
-    font-size: 48px;
-    color: #D2691E;
-    margin-bottom: 20px;
-    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.2);
-}
-
-.final-score {
-    font-size: 36px;
-    color: #FF6347;
-    margin: 20px 0;
-    font-weight: 800;
-}
-
-.high-score {
-    font-size: 24px;
-    color: #FFA500;
-    margin: 10px 0;
-    font-weight: 700;
-}
-
-.play-again-btn {
-    background: linear-gradient(135deg, #FF6347 0%, #FF4500 100%);
-    color: white;
-    border: none;
-    padding: 15px 40px;
-    font-size: 24px;
-    font-family: 'Fredoka One', cursive;
-    border-radius: 50px;
-    cursor: pointer;
-    margin-top: 20px;
-    box-shadow: 
-        0 4px 15px rgba(255, 99, 71, 0.4),
-        inset 0 -3px 0 rgba(139, 0, 0, 0.3);
-    transition: all 0.3s ease;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.play-again-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 
-        0 6px 20px rgba(255, 99, 71, 0.5),
-        inset 0 -3px 0 rgba(139, 0, 0, 0.3);
-}
-
-.play-again-btn:active {
-    transform: translateY(0);
-    box-shadow: 
-        0 2px 10px rgba(255, 99, 71, 0.4),
-        inset 0 -1px 0 rgba(139, 0, 0, 0.3);
-}
-
-@keyframes subtleShift {
-    0%, 100% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-}
-
-@media (max-width: 768px) {
-    .game-container {
-        padding: 10px;
-        padding-top: 80px;
-    }
-    
-    .logo {
-        font-size: 20px;
-    }
-    
-    .score-display {
-        font-size: 18px;
-    }
-    
-    .audio-toggle {
-        width: 40px;
-        height: 40px;
-        font-size: 20px;
-    }
-    
-    .game-over-title {
-        font-size: 36px;
-    }
-    
-    .final-score {
-        font-size: 28px;
-    }
-    
-    .play-again-btn {
-        font-size: 20px;
-        padding: 12px 30px;
-    }
-}
-
-/* Performance overlay styles */
-.performance-overlay {
-    position: fixed;
-    top: 100px;
-    right: 20px;
-    background: rgba(0, 0, 0, 0.8);
-    color: #0f0;
-    font-family: monospace;
-    font-size: 12px;
-    padding: 10px;
-    border-radius: 5px;
-    display: none;
-    z-index: 3000;
-    min-width: 200px;
-}
-
-.performance-overlay.visible {
-    display: block;
-}
-
-.performance-overlay div {
-    margin: 5px 0;
-}
-
-.performance-overlay .label {
-    display: inline-block;
-    width: 80px;
-    color: #888;
-}
-
-.performance-overlay .value {
-    color: #0f0;
-}
-
-.performance-overlay .warning {
-    color: #ff0;
-}
-
-.performance-overlay .critical {
-    color: #f00;
-}
-    </style>
-</head>
-<body>
-    <div class="top-bar">
-        <div class="logo">
-            <span style="font-size: 36px;">🍔</span>
-            <span>Burger Drop!</span>
-        </div>
-        <div class="score-display" id="scoreDisplay">Score: 0</div>
-        <button class="audio-toggle" id="audioToggle" aria-label="Toggle Audio">🔊</button>
-    </div>
-
-    <div class="performance-overlay" id="performanceOverlay"></div>
-
-    <div class="game-container">
-        <canvas id="gameCanvas"></canvas>
-    </div>
-
-    <div class="game-over-overlay" id="gameOverOverlay">
-        <div class="game-over-content">
-            <h1 class="game-over-title">Game Over! 🍔</h1>
-            <div class="final-score">Final Score: <span id="finalScore">0</span></div>
-            <div class="high-score">High Score: <span id="highScore">0</span></div>
-            <button class="play-again-btn" id="playAgainBtn">Play Again!</button>
-        </div>
-    </div>
-
-    <script>
 var Game = (function () {
     'use strict';
 
@@ -450,7 +131,7 @@ var Game = (function () {
          */
         addEntity(type, entity) {
             if (!this.entities[type]) {
-                throw new Error(\`Unknown entity type: \${type}\`);
+                throw new Error(`Unknown entity type: ${type}`);
             }
             
             this.entities[type].push(entity);
@@ -508,7 +189,7 @@ var Game = (function () {
          */
         activatePowerUp(type, duration) {
             if (!this.powerUps[type]) {
-                throw new Error(\`Unknown power-up type: \${type}\`);
+                throw new Error(`Unknown power-up type: ${type}`);
             }
 
             // Deactivate if already active (reset timer)
@@ -674,7 +355,7 @@ var Game = (function () {
                     try {
                         callback(data);
                     } catch (error) {
-                        console.error(\`Error in event listener for \${event}:\`, error);
+                        console.error(`Error in event listener for ${event}:`, error);
                     }
                 });
             }
@@ -697,14 +378,14 @@ var Game = (function () {
             // Entity validation
             Object.entries(this.entities).forEach(([type, entities]) => {
                 if (!Array.isArray(entities)) {
-                    errors.push(\`Entity collection \${type} must be an array\`);
+                    errors.push(`Entity collection ${type} must be an array`);
                 }
             });
             
             // Power-up validation
             Object.entries(this.powerUps).forEach(([type, powerUp]) => {
                 if (powerUp.active && powerUp.timeLeft <= 0) {
-                    errors.push(\`Active power-up \${type} has invalid timeLeft\`);
+                    errors.push(`Active power-up ${type} has invalid timeLeft`);
                 }
             });
             
@@ -961,7 +642,7 @@ var Game = (function () {
             ctx.scale(this.scale, this.scale);
             
             if (this.text) {
-                ctx.font = \`bold \${20 + this.size * 2}px Arial\`; // Keep Arial for emoji compatibility
+                ctx.font = `bold ${20 + this.size * 2}px Arial`; // Keep Arial for emoji compatibility
                 ctx.fillStyle = this.color;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
@@ -1229,7 +910,7 @@ var Game = (function () {
             this.data = powerUpTypes[type];
             
             if (!this.data) {
-                throw new Error(\`Unknown power-up type: \${type}\`);
+                throw new Error(`Unknown power-up type: ${type}`);
             }
             
             this.x = options.x !== undefined ? options.x : Math.random() * (options.canvasWidth || 800 - 50);
@@ -1290,7 +971,7 @@ var Game = (function () {
             
             // Emoji (cached font for performance)
             if (!this.cachedFont) {
-                this.cachedFont = \`\${this.size * 0.6}px Arial\`;
+                this.cachedFont = `${this.size * 0.6}px Arial`;
             }
             ctx.font = this.cachedFont;
             ctx.textAlign = 'center';
@@ -1533,7 +1214,7 @@ var Game = (function () {
             this.data = ingredientTypes[type];
             
             if (!this.data) {
-                throw new Error(\`Unknown ingredient type: \${type}\`);
+                throw new Error(`Unknown ingredient type: ${type}`);
             }
             
             // Position and movement
@@ -1650,7 +1331,7 @@ var Game = (function () {
                 this.data.variants[Math.floor(frameCount / 30) % this.data.variants.length] : 
                 this.data.emoji;
             
-            ctx.font = \`\${this.data.size}px Arial\`; // Keep Arial for emoji compatibility
+            ctx.font = `${this.data.size}px Arial`; // Keep Arial for emoji compatibility
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(emojiToUse, 0, 0);
@@ -1676,8 +1357,8 @@ var Game = (function () {
                 const gradient = ctx.createLinearGradient(
                     point.x, point.y, nextPoint.x, nextPoint.y
                 );
-                gradient.addColorStop(0, \`rgba(255, 255, 255, \${point.alpha * 0.3})\`);
-                gradient.addColorStop(1, \`rgba(255, 255, 255, \${nextPoint.alpha * 0.3})\`);
+                gradient.addColorStop(0, `rgba(255, 255, 255, ${point.alpha * 0.3})`);
+                gradient.addColorStop(1, `rgba(255, 255, 255, ${nextPoint.alpha * 0.3})`);
                 
                 ctx.strokeStyle = gradient;
                 ctx.lineWidth = Math.max(point.size * 0.15, 1);
@@ -1799,7 +1480,7 @@ var Game = (function () {
             this.data = ingredientTypes[type];
             
             if (!this.data) {
-                throw new Error(\`Unknown ingredient type: \${type}\`);
+                throw new Error(`Unknown ingredient type: ${type}`);
             }
             
             // Position and movement
@@ -2020,7 +1701,7 @@ var Game = (function () {
             const timeSeconds = Math.ceil(this.timeLeft / 1000);
             ctx.fillStyle = this.timeLeft < 10000 ? '#FF0000' : '#333';
             ctx.font = '700 14px Nunito, Arial';
-            ctx.fillText(\`\${timeSeconds}s\`, this.x + this.width / 2, this.y + 30);
+            ctx.fillText(`${timeSeconds}s`, this.x + this.width / 2, this.y + 30);
 
             // Ingredients (from bottom to top)
             this.drawIngredients(ctx, frameCount);
@@ -2087,7 +1768,7 @@ var Game = (function () {
             // Add pulsing effect if enabled
             if (this.enablePulse) {
                 const pulseAlpha = 0.3 + Math.sin(frameCount * 0.15 + this.pulsePhase) * 0.2;
-                ctx.fillStyle = \`rgba(255, 215, 0, \${pulseAlpha})\`;
+                ctx.fillStyle = `rgba(255, 215, 0, ${pulseAlpha})`;
                 ctx.fillRect(this.x + 1, yPos - 19, this.width - 2, 33);
             }
         }
@@ -2913,7 +2594,7 @@ var Game = (function () {
                     try {
                         callback(data);
                     } catch (error) {
-                        console.error(\`Error in audio event listener for \${event}:\`, error);
+                        console.error(`Error in audio event listener for ${event}:`, error);
                     }
                 });
             }
@@ -3005,7 +2686,7 @@ var Game = (function () {
                 
                 // Add paper fibers
                 for(let i = 0; i < 20; i++) {
-                    patternCtx.strokeStyle = \`rgba(220, 220, 200, \${Math.random() * 0.3})\`;
+                    patternCtx.strokeStyle = `rgba(220, 220, 200, ${Math.random() * 0.3})`;
                     patternCtx.lineWidth = 0.5;
                     patternCtx.beginPath();
                     patternCtx.moveTo(Math.random() * size, Math.random() * size);
@@ -3440,7 +3121,7 @@ var Game = (function () {
                 shake.x = (Math.random() - 0.5) * shake.intensity;
                 shake.y = (Math.random() - 0.5) * shake.intensity;
                 
-                this.canvas.style.transform = \`translate(\${shake.x}px, \${shake.y}px)\`;
+                this.canvas.style.transform = `translate(${shake.x}px, ${shake.y}px)`;
                 shake.intensity *= 0.9; // Gradually reduce intensity
             } else {
                 shake.intensity = 0;
@@ -3648,17 +3329,17 @@ var Game = (function () {
         createFloatingText(x, y, text, color = '#FFD700') {
             const div = document.createElement('div');
             div.className = 'floating-text';
-            div.style.cssText = \`
+            div.style.cssText = `
             position: absolute;
-            left: \${x}px;
-            top: \${y}px;
-            color: \${color};
+            left: ${x}px;
+            top: ${y}px;
+            color: ${color};
             font-size: 24px;
             font-weight: bold;
             pointer-events: none;
             z-index: 1000;
             animation: floatUp 1s ease-out forwards;
-        \`;
+        `;
             div.textContent = text;
             document.body.appendChild(div);
             
@@ -3817,7 +3498,7 @@ var Game = (function () {
             }
             
             if (this.options.debug) {
-                console.log(\`InputSystem: \${event.changedTouches.length} touch(es) started\`);
+                console.log(`InputSystem: ${event.changedTouches.length} touch(es) started`);
             }
         }
         
@@ -3855,7 +3536,7 @@ var Game = (function () {
             }
             
             if (this.options.debug) {
-                console.log(\`InputSystem: Touch ended, \${this.touches.size} active touches\`);
+                console.log(`InputSystem: Touch ended, ${this.touches.size} active touches`);
             }
         }
         
@@ -3873,7 +3554,7 @@ var Game = (function () {
             this.triggerClick(canvasCoords.x, canvasCoords.y, 'mouse');
             
             if (this.options.debug) {
-                console.log(\`InputSystem: Mouse down at \${canvasCoords.x}, \${canvasCoords.y}\`);
+                console.log(`InputSystem: Mouse down at ${canvasCoords.x}, ${canvasCoords.y}`);
             }
         }
         
@@ -3938,7 +3619,7 @@ var Game = (function () {
             }
             
             if (this.options.debug) {
-                console.log(\`InputSystem: Canvas resized to \${this.canvas.width}x\${this.canvas.height}\`);
+                console.log(`InputSystem: Canvas resized to ${this.canvas.width}x${this.canvas.height}`);
             }
         }
         
@@ -5057,7 +4738,7 @@ var Game = (function () {
                     this.stats.performanceLevel = dominantLevel;
                     
                     if (this.debugMode) {
-                        console.log(\`Performance level changed: \${oldLevel} → \${dominantLevel}\`);
+                        console.log(`Performance level changed: ${oldLevel} → ${dominantLevel}`);
                     }
                     
                     this.emit('performanceLevelChanged', {
@@ -5216,7 +4897,7 @@ var Game = (function () {
                     try {
                         callback(data);
                     } catch (error) {
-                        console.error(\`Error in performance monitor \${event} callback:\`, error);
+                        console.error(`Error in performance monitor ${event} callback:`, error);
                     }
                 });
             }
@@ -5326,7 +5007,7 @@ var Game = (function () {
          * Get container CSS styles based on position
          */
         getContainerStyles() {
-            const baseStyles = \`
+            const baseStyles = `
             position: fixed;
             z-index: 10000;
             background: rgba(0, 0, 0, 0.8);
@@ -5338,7 +5019,7 @@ var Game = (function () {
             min-width: 200px;
             max-width: 300px;
             backdrop-filter: blur(5px);
-        \`;
+        `;
             
             const positions = {
                 'top-left': 'top: 10px; left: 10px;',
@@ -5355,14 +5036,14 @@ var Game = (function () {
          */
         createFPSSection() {
             const section = document.createElement('div');
-            section.innerHTML = \`
+            section.innerHTML = `
             <div style="font-weight: bold; margin-bottom: 5px;">🎯 Performance</div>
             <div>FPS: <span id="perf-fps">--</span></div>
             <div>Avg: <span id="perf-avg-fps">--</span></div>
             <div>Min: <span id="perf-min-fps">--</span></div>
             <div>Frame: <span id="perf-frame-time">--</span>ms</div>
             <div>Drops: <span id="perf-drops">--</span></div>
-        \`;
+        `;
             
             this.container.appendChild(section);
             
@@ -5380,13 +5061,13 @@ var Game = (function () {
         createQualitySection() {
             const section = document.createElement('div');
             section.style.marginTop = '10px';
-            section.innerHTML = \`
+            section.innerHTML = `
             <div style="font-weight: bold; margin-bottom: 5px;">⚙️ Quality</div>
             <div>Level: <span id="perf-quality-level">--</span></div>
             <div>Particles: <span id="perf-max-particles">--</span></div>
             <div>Shadows: <span id="perf-shadows">--</span></div>
             <div>Effects: <span id="perf-effects">--</span></div>
-        \`;
+        `;
             
             this.container.appendChild(section);
             
@@ -5402,12 +5083,12 @@ var Game = (function () {
         createPoolsSection() {
             const section = document.createElement('div');
             section.style.marginTop = '10px';
-            section.innerHTML = \`
+            section.innerHTML = `
             <div style="font-weight: bold; margin-bottom: 5px;">🎱 Object Pools</div>
             <div id="perf-pools-content">
                 <!-- Pool stats will be inserted here -->
             </div>
-        \`;
+        `;
             
             this.container.appendChild(section);
             this.elements.poolsContent = document.getElementById('perf-pools-content');
@@ -5419,13 +5100,13 @@ var Game = (function () {
         createDetailsSection() {
             const section = document.createElement('div');
             section.style.marginTop = '10px';
-            section.innerHTML = \`
+            section.innerHTML = `
             <div style="font-weight: bold; margin-bottom: 5px;">📊 Details</div>
             <div>Memory: <span id="perf-memory">--</span></div>
             <div>Entities: <span id="perf-entities">--</span></div>
             <div>Draw Calls: <span id="perf-draw-calls">--</span></div>
             <div>Performance: <span id="perf-health">--</span></div>
-        \`;
+        `;
             
             this.container.appendChild(section);
             
@@ -5441,10 +5122,10 @@ var Game = (function () {
         createGraphSection() {
             const section = document.createElement('div');
             section.style.marginTop = '10px';
-            section.innerHTML = \`
+            section.innerHTML = `
             <div style="font-weight: bold; margin-bottom: 5px;">📈 FPS Graph</div>
             <canvas id="perf-graph" width="180" height="50" style="background: rgba(255,255,255,0.1); border-radius: 3px;"></canvas>
-        \`;
+        `;
             
             this.container.appendChild(section);
             this.elements.graph = document.getElementById('perf-graph');
@@ -5457,7 +5138,7 @@ var Game = (function () {
         createToggleButton() {
             const button = document.createElement('button');
             button.innerHTML = '👁️';
-            button.style.cssText = \`
+            button.style.cssText = `
             position: absolute;
             top: -5px;
             right: -5px;
@@ -5472,7 +5153,7 @@ var Game = (function () {
             display: flex;
             align-items: center;
             justify-content: center;
-        \`;
+        `;
             
             button.onclick = () => this.toggle();
             this.container.appendChild(button);
@@ -5579,12 +5260,12 @@ var Game = (function () {
                 const utilization = ((stats.activeCount / (stats.poolSize + stats.activeCount)) * 100).toFixed(0);
                 const efficiency = (stats.reuseRatio * 100).toFixed(0);
                 
-                html += \`
+                html += `
                 <div style="font-size: 10px; margin: 2px 0;">
-                    <div>\${name}: \${stats.activeCount}/\${stats.poolSize + stats.activeCount}</div>
-                    <div style="color: #888;">Use: \${utilization}% | Reuse: \${efficiency}%</div>
+                    <div>${name}: ${stats.activeCount}/${stats.poolSize + stats.activeCount}</div>
+                    <div style="color: #888;">Use: ${utilization}% | Reuse: ${efficiency}%</div>
                 </div>
-            \`;
+            `;
             }
             
             if (this.elements.poolsContent) {
@@ -5598,7 +5279,7 @@ var Game = (function () {
         updateDetailsDisplay(stats, gameData) {
             if (this.elements.memory && window.performance && window.performance.memory) {
                 const mb = (window.performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(1);
-                this.elements.memory.textContent = \`\${mb}MB\`;
+                this.elements.memory.textContent = `${mb}MB`;
             }
             
             if (this.elements.entities) {
@@ -5915,7 +5596,7 @@ var Game = (function () {
             // Listen for performance level changes
             this.performanceMonitor.on('performanceLevelChanged', (data) => {
                 const { newLevel, settings } = data;
-                console.log(\`Performance level changed to: \${newLevel}\`);
+                console.log(`Performance level changed to: ${newLevel}`);
                 
                 // Apply new quality settings
                 this.applyQualitySettings(settings);
@@ -5924,7 +5605,7 @@ var Game = (function () {
             // Listen for frame drops
             this.performanceMonitor.on('frameDropDetected', (data) => {
                 if (this.config.debugPerformance) {
-                    console.warn(\`Frame drop detected: \${data.frameTime.toFixed(2)}ms\`);
+                    console.warn(`Frame drop detected: ${data.frameTime.toFixed(2)}ms`);
                 }
             });
         }
@@ -6082,7 +5763,7 @@ var Game = (function () {
                 
                 // Create floating score text
                 this.createFloatingText(
-                    \`+\${points}\`,
+                    `+${points}`,
                     ingredient.x + ingredient.data.size / 2,
                     ingredient.y,
                     '#00FF00'
@@ -6176,7 +5857,7 @@ var Game = (function () {
             
             // Create floating text
             this.createFloatingText(
-                \`+\${bonusPoints}\`,
+                `+${bonusPoints}`,
                 orderCenterX,
                 orderCenterY,
                 '#FFD700'
@@ -6200,8 +5881,8 @@ var Game = (function () {
             const floatingText = document.createElement('div');
             floatingText.className = 'floating-text';
             floatingText.textContent = text;
-            floatingText.style.left = \`\${x}px\`;
-            floatingText.style.top = \`\${y}px\`;
+            floatingText.style.left = `${x}px`;
+            floatingText.style.top = `${y}px`;
             floatingText.style.color = color;
             floatingText.style.fontSize = '24px';
             
@@ -6442,7 +6123,7 @@ var Game = (function () {
             // Update score
             const scoreElement = document.getElementById('score');
             if (scoreElement) {
-                scoreElement.textContent = \`Score: \${this.state.score}\`;
+                scoreElement.textContent = `Score: ${this.state.score}`;
                 if (this.state.scoreChanged) {
                     scoreElement.classList.add('bounce');
                     setTimeout(() => scoreElement.classList.remove('bounce'), 400);
@@ -6453,7 +6134,7 @@ var Game = (function () {
             // Update combo
             const comboElement = document.getElementById('combo');
             if (comboElement) {
-                comboElement.textContent = \`Combo: x\${this.state.combo}\`;
+                comboElement.textContent = `Combo: x${this.state.combo}`;
                 if (this.state.comboChanged) {
                     comboElement.classList.add('pulse');
                     setTimeout(() => comboElement.classList.remove('pulse'), 300);
@@ -6480,14 +6161,14 @@ var Game = (function () {
                 for (const [type, powerUp] of Object.entries(this.state.activePowerUps)) {
                     if (powerUp.active) {
                         const indicator = document.createElement('div');
-                        indicator.className = \`power-up-indicator \${type.toLowerCase().replace(/([A-Z])/g, '-$1').toLowerCase()}\`;
+                        indicator.className = `power-up-indicator ${type.toLowerCase().replace(/([A-Z])/g, '-$1').toLowerCase()}`;
                         
                         const powerUpData = PowerUp.getPowerUpTypes()[type];
-                        indicator.innerHTML = \`
-                        <span>\${powerUpData.emoji}</span>
-                        <span>\${powerUpData.name}</span>
-                        <span class="power-up-timer">\${Math.ceil(powerUp.timeLeft / 1000)}s</span>
-                    \`;
+                        indicator.innerHTML = `
+                        <span>${powerUpData.emoji}</span>
+                        <span>${powerUpData.name}</span>
+                        <span class="power-up-timer">${Math.ceil(powerUp.timeLeft / 1000)}s</span>
+                    `;
                         
                         powerUpStatus.appendChild(indicator);
                     }
@@ -6512,8 +6193,8 @@ var Game = (function () {
             const gameOverElement = document.getElementById('gameOver');
             if (gameOverElement) {
                 gameOverElement.style.display = 'block';
-                document.getElementById('finalScore').textContent = \`Final Score: \${this.state.score}\`;
-                document.getElementById('highScore').textContent = \`High Score: \${this.state.highScore}\`;
+                document.getElementById('finalScore').textContent = `Final Score: ${this.state.score}`;
+                document.getElementById('highScore').textContent = `High Score: ${this.state.highScore}`;
             }
         }
         
@@ -6662,7 +6343,7 @@ var Game = (function () {
             const stats = this.getPoolStats();
             console.log('Object Pool Statistics:');
             Object.entries(stats).forEach(([poolName, poolStats]) => {
-                console.log(\`  \${poolName}:\`, poolStats);
+                console.log(`  ${poolName}:`, poolStats);
             });
         }
         
@@ -6713,55 +6394,3 @@ var Game = (function () {
     return Game;
 
 })();
-
-
-        // Wait for DOM to be ready before initializing the game
-        function initGame() {
-            const canvas = document.getElementById('gameCanvas');
-            if (canvas && typeof Game !== 'undefined') {
-                const game = new Game(canvas, {
-                    enablePerformanceMonitoring: false,
-                    showPerformanceUI: false
-                });
-                game.start();
-                
-                // Setup UI event handlers
-                const audioToggle = document.getElementById('audioToggle');
-                const playAgainBtn = document.getElementById('playAgainBtn');
-                
-                if (audioToggle) {
-                    audioToggle.addEventListener('click', () => {
-                        game.audioSystem.setEnabled(!game.audioSystem.isEnabled());
-                        audioToggle.textContent = game.audioSystem.isEnabled() ? '🔊' : '🔇';
-                    });
-                }
-                
-                if (playAgainBtn) {
-                    playAgainBtn.addEventListener('click', () => {
-                        document.getElementById('gameOverOverlay').style.display = 'none';
-                        game.start();
-                    });
-                }
-                
-                // Make game available globally for debugging
-                window.game = game;
-            }
-        }
-        
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initGame);
-        } else {
-            initGame();
-        }
-    </script>
-</body>
-</html>`;
-
-    return new Response(html, {
-      headers: {
-        'Content-Type': 'text/html;charset=UTF-8',
-        'Cache-Control': 'public, max-age=3600',
-      },
-    });
-  },
-};

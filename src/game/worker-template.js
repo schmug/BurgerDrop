@@ -1,15 +1,8 @@
-// Cloudflare Worker entry point
-// This file serves the game HTML with embedded JavaScript
+// Cloudflare Worker template
+// This file will be processed by build-worker.js to inject CSS and game bundle
 
-addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request))
-})
-
-async function handleRequest(request) {
-  const url = new URL(request.url)
-  
-  // Serve the game HTML file for all requests
-  if (url.pathname === '/' || url.pathname === '/index.html') {
+export default {
+  async fetch(request, env, ctx) {
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,7 +14,7 @@ async function handleRequest(request) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One:wght@400&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-/* INJECT_CSS_HERE */
+{{CSS_CONTENT}}
     </style>
 </head>
 <body>
@@ -50,7 +43,7 @@ async function handleRequest(request) {
     </div>
 
     <script>
-/* INJECT_GAME_HERE */
+{{GAME_BUNDLE}}
 
         // Wait for DOM to be ready before initializing the game
         function initGame() {
@@ -96,12 +89,9 @@ async function handleRequest(request) {
 
     return new Response(html, {
       headers: {
-        'content-type': 'text/html;charset=UTF-8',
-        'Cache-Control': 'public, max-age=3600'
-      }
-    })
-  }
-
-  // Return 404 for other paths
-  return new Response('Not Found', { status: 404 })
-}
+        'Content-Type': 'text/html;charset=UTF-8',
+        'Cache-Control': 'public, max-age=3600',
+      },
+    });
+  },
+};
