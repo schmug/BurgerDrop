@@ -242,6 +242,12 @@ export class Ingredient {
             const point = this.trail[i];
             const nextPoint = this.trail[i + 1];
             
+            // Validate point coordinates
+            if (!isFinite(point.x) || !isFinite(point.y) || 
+                !isFinite(nextPoint.x) || !isFinite(nextPoint.y)) {
+                continue;
+            }
+            
             // Draw line segment with gradient
             const gradient = ctx.createLinearGradient(
                 point.x, point.y, nextPoint.x, nextPoint.y
