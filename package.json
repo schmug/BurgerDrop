@@ -10,9 +10,11 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "build": "rollup -c",
-    "build:dev": "rollup -c --environment NODE_ENV:development",
-    "build:prod": "NODE_ENV=production rollup -c"
+    "build:game": "rollup -c",
+    "build:worker": "node scripts/build-worker.js",
+    "build": "npm run build:game && npm run build:worker",
+    "build:dev": "rollup -c --environment NODE_ENV:development && npm run build:worker",
+    "build:prod": "NODE_ENV=production npm run build"
   },
   "keywords": [
     "game",
