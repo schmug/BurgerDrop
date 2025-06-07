@@ -16,10 +16,13 @@ const workerTemplate = readFileSync(join(rootDir, 'src/game/worker-template.js')
 const cssContent = readFileSync(join(rootDir, 'src/game/templates/styles.css'), 'utf8');
 const gameBundle = readFileSync(join(rootDir, 'src/build/game.iife.js'), 'utf8');
 
+// Escape backticks in the game bundle to prevent template literal conflicts
+const escapedGameBundle = gameBundle.replace(/`/g, '\\`').replace(/\${/g, '\\${');
+
 // Inject CSS and game bundle into the worker template
 let finalWorker = workerTemplate
   .replace('/* INJECT_CSS_HERE */', cssContent)
-  .replace('/* INJECT_GAME_HERE */', gameBundle);
+  .replace('/* INJECT_GAME_HERE */', escapedGameBundle);
 
 // Write the final worker
 writeFileSync(join(rootDir, 'src/worker.js'), finalWorker);
