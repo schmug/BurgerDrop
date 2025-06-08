@@ -47,10 +47,10 @@ export default class Game {
         // Initialize game state
         this.state = new GameState();
         this.state.core.lives = this.config.initialLives;
-        
+
         // Add gameState property for compatibility
         this.gameState = 'menu';
-        
+      
         // Initialize systems
         this.audioSystem = new AudioSystem();
         this.renderer = new Renderer(this.canvas);
@@ -92,7 +92,14 @@ export default class Game {
         this.lastPowerUpSpawn = 0;
         
         // Order templates
-        this.orderTemplates = orderTemplates;
+        this.orderTemplates = [
+            { name: 'Classic Burger', ingredients: ['bun_bottom', 'patty', 'cheese', 'lettuce', 'tomato', 'bun_top'], time: 30 },
+            { name: 'Simple Burger', ingredients: ['bun_bottom', 'patty', 'bun_top'], time: 20 },
+            { name: 'Cheese Burger', ingredients: ['bun_bottom', 'patty', 'cheese', 'bun_top'], time: 25 },
+            { name: 'Veggie Burger', ingredients: ['bun_bottom', 'lettuce', 'tomato', 'onion', 'pickle', 'bun_top'], time: 30 },
+            { name: 'Bacon Burger', ingredients: ['bun_bottom', 'patty', 'bacon', 'cheese', 'bun_top'], time: 35 },
+            { name: 'Breakfast Burger', ingredients: ['bun_bottom', 'patty', 'egg', 'bacon', 'cheese', 'bun_top'], time: 40 }
+        ];
         
         // Bind methods
         this.update = this.update.bind(this);
@@ -213,7 +220,7 @@ export default class Game {
      * Setup input event handlers
      */
     setupInputHandlers() {
-        this.unregisterClick = this.inputSystem.onClick((x, y, type) => this.handleInput({ x, y, type }));
+        this.unregisterClick = this.inputSystem.onClick((event) => this.handleInput(event));
     }
     
     /**
@@ -221,8 +228,7 @@ export default class Game {
      * @param {Object} event - Input event data
      */
     handleInput(event) {
-        if (this.gameState !== 'playing' || this.isPaused) return;
-        
+        if (this.state.gameState !== 'playing' || this.isPaused) return;
         const { x, y } = event;
         
         // Check power-up collection
@@ -299,8 +305,7 @@ export default class Game {
         if (result !== 'wrong') {
             // Correct ingredient
             const points = this.calculatePoints(ingredient, correctOrder);
-            this.state.updateScore(points);
-            
+            this.state.addScore(points);
             if (result === 'completed') {
                 // Order completed
                 this.completeOrder(correctOrder);
@@ -336,77 +341,19 @@ export default class Game {
             this.renderer.startScreenShake(10, 15);
             this.audioSystem.playError();
             
-            // Destroy with visual effect
-            this.destroyIngredient(ingredient, index);
-            return;
+            // Create error particles
+            for (let i = 0; i < 3; i++) {
+                const particle = this.poolManager.get('particle',
+                    ingredient.x + ingredient.data.size / 2,
+                    ingredient.y + ingredient.data.size / 2,
+                    '#FF0000',
+                    '✗',
+                    'default',
+                    {}
+                );
+                this.particles.push(particle);
+            }
         }
-        
-        // Correct ingredient - remove without destruction effect
-        ingredient.collected = true;
-        this.ingredients.splice(index, 1);
-        this.poolManager.release('ingredient', ingredient);
-    }
-    
-    /**
-     * Destroy an ingredient with visual effects
-     * @param {Ingredient} ingredient - The ingredient to destroy
-     * @param {number} index - Index in the ingredients array
-     */
-    destroyIngredient(ingredient, index) {
-        const centerX = ingredient.x + ingredient.data.size / 2;
-        const centerY = ingredient.y + ingredient.data.size / 2;
-        
-        // Create explosion particles
-        const particleCount = 8; // Balanced for performance
-        const angleStep = (Math.PI * 2) / particleCount;
-        
-        for (let i = 0; i < particleCount; i++) {
-            const angle = i * angleStep;
-            const speed = 3 + Math.random() * 3;
-            const particle = this.poolManager.get('particle',
-                centerX,
-                centerY,
-                ingredient.data.color || ingredient.getColor(),
-                '',
-                'circle',
-                {
-                    vx: Math.cos(angle) * speed,
-                    vy: Math.sin(angle) * speed,
-                    size: 3 + Math.random() * 3,
-                    gravity: 0.2,
-                    decay: 0.02,
-                    bounce: 0.5
-                }
-            );
-            this.particles.push(particle);
-        }
-        
-        // Create emoji fragments (just a few for performance)
-        for (let i = 0; i < 3; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const speed = 2 + Math.random() * 4;
-            const fragment = this.poolManager.get('particle',
-                centerX + (Math.random() - 0.5) * 10,
-                centerY + (Math.random() - 0.5) * 10,
-                ingredient.data.color || '#FFD700',
-                ingredient.data.emoji,
-                'default',
-                {
-                    vx: Math.cos(angle) * speed,
-                    vy: Math.sin(angle) * speed - 2,
-                    size: ingredient.data.size * 0.3,
-                    gravity: 0.3,
-                    decay: 0.025,
-                    rotationSpeed: (Math.random() - 0.5) * 0.4
-                }
-            );
-            this.particles.push(fragment);
-        }
-        
-        // Add screen ripple effect at destruction point
-        this.renderer.startRippleEffect(centerX, centerY, 40);
-        
-        // Play destruction sound (error sound already played for wrong ingredients)
         
         // Remove ingredient
         ingredient.collected = true;
@@ -427,11 +374,11 @@ export default class Game {
         const timeBonus = Math.floor(order.timeLeft / 1000);
         
         // Combo multiplier
-        const comboMultiplier = this.state.core.combo;
+        const comboMultiplier = this.state.combo;
         
-        // Power-up multiplier - fixed to use correct state path
-        const scoreMultiplier = this.state.powerUps?.scoreMultiplier;
-        const powerUpMultiplier = (scoreMultiplier?.active && scoreMultiplier?.multiplier) || 1;
+        // Power-up multiplier
+        const powerUpMultiplier = this.state.activePowerUps.scoreMultiplier.active ? 
+            this.state.activePowerUps.scoreMultiplier.multiplier : 1;
         
         return Math.floor((basePoints + timeBonus) * comboMultiplier * powerUpMultiplier);
     }
@@ -445,9 +392,9 @@ export default class Game {
         this.state.incrementCombo(5);
         
         // Bonus points
-        const bonusPoints = Math.floor(100 * this.state.core.combo * 
-            (this.state.powerUps.scoreMultiplier.active ? 2 : 1));
-        this.state.updateScore(bonusPoints);
+        const bonusPoints = Math.floor(100 * this.state.combo * 
+            (this.state.activePowerUps.scoreMultiplier.active ? 2 : 1));
+        this.state.addScore(bonusPoints);
         
         // Play success sound
         this.audioSystem.playOrderComplete();
@@ -530,16 +477,6 @@ export default class Game {
             }
         });
         
-        // If no orders, spawn random ingredients to keep game active
-        if (possibleTypes.size === 0) {
-            const ingredientTypes = Ingredient.getAvailableTypes();
-            // Add 2-3 random ingredient types
-            for (let i = 0; i < Math.floor(Math.random() * 2) + 2; i++) {
-                const randomType = ingredientTypes[Math.floor(Math.random() * ingredientTypes.length)];
-                possibleTypes.add(randomType);
-            }
-        }
-        
         if (possibleTypes.size > 0) {
             const typesArray = Array.from(possibleTypes);
             const type = typesArray[Math.floor(Math.random() * typesArray.length)];
@@ -551,7 +488,7 @@ export default class Game {
             });
             
             // Apply current speed with difficulty scaling
-            const difficultyMultiplier = 1 + (this.state.core.score * this.config.difficultyIncreaseRate);
+            const difficultyMultiplier = 1 + (this.state.score * this.config.difficultyIncreaseRate);
             ingredient.speed *= difficultyMultiplier;
             ingredient.baseSpeed *= difficultyMultiplier;
             
@@ -587,8 +524,7 @@ export default class Game {
      * @param {number} deltaTime - Time since last update in milliseconds
      */
     update(deltaTime) {
-        try {
-            if (this.gameState !== 'playing' || this.isPaused) return;
+        if (this.state.gameState !== 'playing' || this.isPaused) return;
         
         this.frameCount++;
         
@@ -597,7 +533,7 @@ export default class Game {
         
         // Update color theme
         if (this.renderer.updateColorTheme) {
-            this.renderer.updateColorTheme(this.state.core.combo, this.state.core.score, this.frameCount);
+            this.renderer.updateColorTheme(this.state.combo, this.state.score, this.frameCount);
         }
         
         // Spawn entities
@@ -617,8 +553,7 @@ export default class Game {
         // Update ingredients
         for (let i = this.ingredients.length - 1; i >= 0; i--) {
             const ingredient = this.ingredients[i];
-            // Pass deltaTime so ingredient physics stay consistent
-            ingredient.update(this.frameCount, this.state, deltaTime);
+            ingredient.update(this.frameCount, this.state.activePowerUps);
             
             // Remove if off screen
             if (ingredient.y > this.canvas.height + 50) {
@@ -630,17 +565,15 @@ export default class Game {
         // Update orders
         for (let i = this.orders.length - 1; i >= 0; i--) {
             const order = this.orders[i];
-            if (!order.update(deltaTime, this.state.powerUps)) {
+            if (!order.update(deltaTime, this.state.activePowerUps)) {
                 // Order expired
                 this.orders.splice(i, 1);
                 this.state.loseLife();
-                if (typeof this.audioSystem.playOrderExpired === 'function') {
-                    this.audioSystem.playOrderExpired();
-                }
+                this.audioSystem.playOrderExpire();
                 this.renderer.startScreenShake(20, 30);
                 
                 // Check game over
-                if (this.state.core.lives <= 0) {
+                if (this.state.lives <= 0) {
                     this.gameOver();
                 }
             }
@@ -678,22 +611,17 @@ export default class Game {
         
         // Update UI
         this.updateUI();
-        } catch (error) {
-            console.error('Update error:', error);
-            throw error; // Re-throw to be caught by game loop
-        }
     }
     
     /**
      * Render game state
      */
     render() {
-        try {
-            // Clear canvas
-            this.renderer.clear(this.canvas.width, this.canvas.height);
+        // Clear canvas
+        this.renderer.clear(this.canvas.width, this.canvas.height);
         
-        // Screen shake is applied via updateScreenShake
-        // (legacy applyScreenShake call removed)
+        // Apply screen shake
+        this.renderer.applyScreenShake();
         
         // Draw background
         this.renderer.drawBackground(this.canvas.width, this.canvas.height);
@@ -718,22 +646,11 @@ export default class Game {
             particle.draw(this.ctx, this.frameCount);
         });
         
-
-        // Draw overlay effects like flashes and ripples
-        this.renderer.drawScreenEffects();
+        // Apply screen flash
+        this.renderer.applyScreenFlash(this.canvas.width, this.canvas.height);
         
         // Reset transform
         this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-        } catch (error) {
-            console.error('Render error:', error);
-            // Try to clear canvas to prevent visual artifacts
-            try {
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            } catch (clearError) {
-                console.error('Failed to clear canvas:', clearError);
-            }
-            throw error; // Re-throw to be caught by game loop
-        }
     }
     
     /**
@@ -741,34 +658,29 @@ export default class Game {
      * @param {number} currentTime - Current timestamp
      */
     gameLoop(currentTime) {
-        try {
-            if (!this.lastTime) {
-                this.lastTime = currentTime;
-            }
-            
-            // Update performance monitoring
-            this.performanceMonitor.update(currentTime);
-            
-            this.deltaTime = currentTime - this.lastTime;
+        if (!this.lastTime) {
             this.lastTime = currentTime;
-            this.frameCount++;
-            
-            this.update(this.deltaTime);
-            this.render();
-            
-            // Update performance UI
-            this.performanceUI.update(currentTime, {
-                particles: this.particles,
-                ingredients: this.ingredients,
-                powerUps: this.powerUps,
-                renderer: this.renderer
-            });
-            
-            this.animationId = requestAnimationFrame((time) => this.gameLoop(time));
-        } catch (error) {
-            console.error('Game loop error:', error);
-            this.handleGameError(error);
         }
+        
+        // Update performance monitoring
+        this.performanceMonitor.update(currentTime);
+        
+        this.deltaTime = currentTime - this.lastTime;
+        this.lastTime = currentTime;
+        this.frameCount++;
+        
+        this.update(this.deltaTime);
+        this.render();
+        
+        // Update performance UI
+        this.performanceUI.update(currentTime, {
+            particles: this.particles,
+            ingredients: this.ingredients,
+            powerUps: this.powerUps,
+            renderer: this.renderer
+        });
+        
+        this.animationId = requestAnimationFrame((time) => this.gameLoop(time));
     }
     
     /**
@@ -778,7 +690,7 @@ export default class Game {
         // Update score
         const scoreElement = document.getElementById('score');
         if (scoreElement) {
-            scoreElement.textContent = `Score: ${this.state.core.score}`;
+            scoreElement.textContent = `Score: ${this.state.score}`;
             if (this.state.scoreChanged) {
                 scoreElement.classList.add('bounce');
                 setTimeout(() => scoreElement.classList.remove('bounce'), 400);
@@ -789,7 +701,7 @@ export default class Game {
         // Update combo
         const comboElement = document.getElementById('combo');
         if (comboElement) {
-            comboElement.textContent = `Combo: x${this.state.core.combo}`;
+            comboElement.textContent = `Combo: x${this.state.combo}`;
             if (this.state.comboChanged) {
                 comboElement.classList.add('pulse');
                 setTimeout(() => comboElement.classList.remove('pulse'), 300);
@@ -800,7 +712,7 @@ export default class Game {
         // Update lives
         const livesElement = document.getElementById('lives');
         if (livesElement) {
-            livesElement.textContent = '❤️'.repeat(this.state.core.lives);
+            livesElement.textContent = '❤️'.repeat(this.state.lives);
             if (this.state.livesChanged) {
                 livesElement.classList.add('shake');
                 setTimeout(() => livesElement.classList.remove('shake'), 500);
@@ -811,31 +723,19 @@ export default class Game {
         // Update power-up status
         const powerUpStatus = document.getElementById('powerUpStatus');
         if (powerUpStatus) {
-            // Clear children safely
-            while (powerUpStatus.firstChild) {
-                powerUpStatus.removeChild(powerUpStatus.firstChild);
-            }
+            powerUpStatus.innerHTML = '';
             
-            for (const [type, powerUp] of Object.entries(this.state.powerUps)) {
+            for (const [type, powerUp] of Object.entries(this.state.activePowerUps)) {
                 if (powerUp.active) {
                     const indicator = document.createElement('div');
                     indicator.className = `power-up-indicator ${type.toLowerCase().replace(/([A-Z])/g, '-$1').toLowerCase()}`;
                     
                     const powerUpData = PowerUp.getPowerUpTypes()[type];
-                    
-                    // Create elements safely to prevent XSS
-                    const emojiSpan = document.createElement('span');
-                    emojiSpan.textContent = powerUpData.emoji;
-                    indicator.appendChild(emojiSpan);
-                    
-                    const nameSpan = document.createElement('span');
-                    nameSpan.textContent = powerUpData.name;
-                    indicator.appendChild(nameSpan);
-                    
-                    const timerSpan = document.createElement('span');
-                    timerSpan.className = 'power-up-timer';
-                    timerSpan.textContent = `${Math.ceil(powerUp.timeLeft / 1000)}s`;
-                    indicator.appendChild(timerSpan);
+                    indicator.innerHTML = `
+                        <span>${powerUpData.emoji}</span>
+                        <span>${powerUpData.name}</span>
+                        <span class="power-up-timer">${Math.ceil(powerUp.timeLeft / 1000)}s</span>
+                    `;
                     
                     powerUpStatus.appendChild(indicator);
                 }
@@ -847,22 +747,15 @@ export default class Game {
      * Handle game over
      */
     gameOver() {
-        this.gameState = 'gameOver';
-        this.state.core.running = false;
+        this.state.endGame();
         this.audioSystem.playGameOver();
         
-        // Update high score
-        if (this.state.core.score > this.state.core.highScore) {
-            this.state.core.highScore = this.state.core.score;
-            this.saveHighScore();
-        }
-        
         // Show game over screen
-        const gameOverElement = document.getElementById('gameOverOverlay');
+        const gameOverElement = document.getElementById('gameOver');
         if (gameOverElement) {
             gameOverElement.style.display = 'block';
-            document.getElementById('finalScore').textContent = `Final Score: ${this.state.core.score}`;
-            document.getElementById('highScore').textContent = `High Score: ${this.state.core.highScore}`;
+            document.getElementById('finalScore').textContent = `Final Score: ${this.state.score}`;
+            document.getElementById('highScore').textContent = `High Score: ${this.state.highScore}`;
         }
     }
     
@@ -870,15 +763,13 @@ export default class Game {
      * Load high score from localStorage
      */
     loadHighScore() {
-        if (isLocalStorageAvailable()) {
-            try {
-                const savedScore = localStorage.getItem('burgerDropHighScore');
-                if (savedScore) {
-                    this.state.core.highScore = parseInt(savedScore) || 0;
-                }
-            } catch (e) {
-                console.warn('Could not load high score:', e);
+        try {
+            const savedScore = localStorage.getItem('burgerDropHighScore');
+            if (savedScore) {
+                this.state.highScore = parseInt(savedScore) || 0;
             }
+        } catch (e) {
+            console.warn('Could not load high score:', e);
         }
     }
     
@@ -886,12 +777,10 @@ export default class Game {
      * Save high score to localStorage
      */
     saveHighScore() {
-        if (isLocalStorageAvailable()) {
-            try {
-                localStorage.setItem('burgerDropHighScore', this.state.core.highScore.toString());
-            } catch (e) {
-                console.warn('Could not save high score:', e);
-            }
+        try {
+            localStorage.setItem('burgerDropHighScore', this.state.highScore.toString());
+        } catch (e) {
+            console.warn('Could not save high score:', e);
         }
     }
     
@@ -928,10 +817,11 @@ export default class Game {
         this.frameCount = 0;
         this.lastSpawn = 0;
         this.lastPowerUpSpawn = 0;
-
-        // Set game state
-        this.gameState = 'playing';
-        this.state.core.running = true;
+        
+        // Start background music
+        this.audioSystem.startBackgroundMusic();
+        
+        // Game state is already set to 'playing' by this.state.startGame()
         
         // Start game loop
         this.lastTime = 0;
@@ -948,8 +838,7 @@ export default class Game {
         }
         
         this.audioSystem.stopBackgroundMusic();
-        this.gameState = 'stopped';
-        this.state.core.running = false;
+        this.state.gameState = 'stopped';
     }
     
     /**
