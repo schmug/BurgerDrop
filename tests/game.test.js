@@ -61,57 +61,77 @@ vi.mock('../src/game/systems/Audio.js', () => ({
 vi.mock('../src/game/State.js', () => {
     class MockGameState {
         constructor() {
+            // Core game state (matching real GameState structure)
+            this.core = {
+                running: false,
+                score: 0,
+                lives: 3,
+                combo: 1,
+                level: 1,
+                frameCount: 0,
+                lastTime: 0,
+                highScore: 0
+            };
+            
+            // Power-up state
+            this.powerUps = {
+                speedBoost: { active: false, timeLeft: 0, multiplier: 0.5 },
+                timeFreeze: { active: false, timeLeft: 0 },
+                scoreMultiplier: { active: false, timeLeft: 0, multiplier: 2 }
+            };
+            
+            // Legacy compatibility properties for tests that expect them
             this.gameState = 'menu';
             this.score = 0;
             this.lives = 3;
             this.combo = 1;
             this.highScore = 0;
-            this.activePowerUps = {
-                speedBoost: { active: false, timeLeft: 0, multiplier: 0.5 },
-                timeFreeze: { active: false, timeLeft: 0 },
-                scoreMultiplier: { active: false, timeLeft: 0, multiplier: 2 }
-            };
-            this.core = {
-                lives: 3
-            };
         }
         
         startGame() {
+            this.core.running = true;
             this.gameState = 'playing';
+            this.core.score = 0;
             this.score = 0;
+            this.core.lives = 3;
             this.lives = 3;
+            this.core.combo = 1;
             this.combo = 1;
         }
         
-        addScore(points) {
-            this.score += points;
+        updateScore(points) {
+            this.core.score += points;
+            this.score += points; // Legacy compatibility
         }
         
         incrementCombo() {
-            this.combo++;
+            this.core.combo++;
+            this.combo++; // Legacy compatibility
         }
         
         resetCombo() {
-            this.combo = 1;
+            this.core.combo = 1;
+            this.combo = 1; // Legacy compatibility
         }
         
         loseLife() {
-            this.lives--;
-            if (this.lives <= 0) {
+            this.core.lives--;
+            this.lives--; // Legacy compatibility
+            if (this.core.lives <= 0) {
                 this.gameState = 'gameOver';
             }
         }
         
         activatePowerUp(type, duration = 10000) {
-            if (this.activePowerUps[type]) {
-                this.activePowerUps[type].active = true;
-                this.activePowerUps[type].timeLeft = duration;
+            if (this.powerUps[type]) {
+                this.powerUps[type].active = true;
+                this.powerUps[type].timeLeft = duration;
             }
         }
         
         update(deltaTime) {
             // Update power-ups
-            Object.values(this.activePowerUps).forEach(powerUp => {
+            Object.values(this.powerUps).forEach(powerUp => {
                 if (powerUp.active) {
                     powerUp.timeLeft -= deltaTime * 1000;
                     if (powerUp.timeLeft <= 0) {
@@ -494,11 +514,11 @@ describe('Game Integration', () => {
             powerUp.y = 100;
             game.powerUps.push(powerUp);
             
-            expect(game.state.activePowerUps.speedBoost.active).toBe(false);
+            expect(game.state.powerUps.speedBoost.active).toBe(false);
             
             game.collectPowerUp(powerUp, 0);
             
-            expect(game.state.activePowerUps.speedBoost.active).toBe(true);
+            expect(game.state.powerUps.speedBoost.active).toBe(true);
             expect(game.powerUps.length).toBe(0);
         });
 
@@ -578,8 +598,8 @@ describe('Game Integration', () => {
         });
 
         it('should update power-up status display', () => {
-            game.state.activePowerUps.speedBoost.active = true;
-            game.state.activePowerUps.speedBoost.timeLeft = 5000;
+            game.state.powerUps.speedBoost.active = true;
+            game.state.powerUps.speedBoost.timeLeft = 5000;
             
             game.updateUI();
             
@@ -623,7 +643,7 @@ describe('Game Integration', () => {
             game.handleInput({ x: 120, y: 120 });
             
             expect(game.powerUps.length).toBe(0);
-            expect(game.state.activePowerUps.speedBoost.active).toBe(true);
+            expect(game.state.powerUps.speedBoost.active).toBe(true);
         });
 
         it('should not handle input when paused', () => {

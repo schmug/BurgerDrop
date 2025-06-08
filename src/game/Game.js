@@ -287,7 +287,9 @@ export default class Game {
      * @param {number} index - Index in the ingredients array
      */
     collectIngredient(ingredient, index) {
-        console.log('Collecting ingredient:', ingredient.type, 'at index:', index);
+        if (this.config?.debug) {
+            console.log('Collecting ingredient:', ingredient.type, 'at index:', index);
+        }
         try {
             let correctOrder = null;
             let result = 'wrong';
