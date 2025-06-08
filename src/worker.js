@@ -1672,7 +1672,7 @@ var Game = (function () {
             
             // Apply speed boost power-up if available
             let speedMultiplier = 1;
-            if (gameState && gameState.isPowerUpActive && gameState.isPowerUpActive('speedBoost')) {
+            if (gameState && gameState.powerUps && gameState.powerUps.speedBoost && gameState.powerUps.speedBoost.active) {
                 speedMultiplier = gameState.powerUps.speedBoost.multiplier;
             }
             this.speed = this.baseSpeed * speedMultiplier;
@@ -5938,6 +5938,9 @@ var Game = (function () {
             this.state = new GameState();
             this.state.core.lives = this.config.initialLives;
             
+            // Add gameState property for compatibility
+            this.gameState = 'menu';
+            
             // Initialize systems
             this.audioSystem = new AudioSystem();
             this.renderer = new Renderer(this.canvas);
@@ -6263,7 +6266,7 @@ var Game = (function () {
             const timeBonus = Math.floor(order.timeLeft / 1000);
             
             // Combo multiplier
-            const comboMultiplier = this.state.combo;
+            const comboMultiplier = this.state.core.combo;
             
             // Power-up multiplier
             const powerUpMultiplier = this.state.activePowerUps.scoreMultiplier.active ? 
@@ -6387,7 +6390,7 @@ var Game = (function () {
                 });
                 
                 // Apply current speed with difficulty scaling
-                const difficultyMultiplier = 1 + (this.state.score * this.config.difficultyIncreaseRate);
+                const difficultyMultiplier = 1 + (this.state.core.score * this.config.difficultyIncreaseRate);
                 ingredient.speed *= difficultyMultiplier;
                 ingredient.baseSpeed *= difficultyMultiplier;
                 
@@ -6423,7 +6426,7 @@ var Game = (function () {
          * @param {number} deltaTime - Time since last update in milliseconds
          */
         update(deltaTime) {
-            if (this.state.gameState !== 'playing' || this.isPaused) return;
+            if (this.gameState !== 'playing' || this.isPaused) return;
             
             this.frameCount++;
             
@@ -6432,7 +6435,7 @@ var Game = (function () {
             
             // Update color theme
             if (this.renderer.updateColorTheme) {
-                this.renderer.updateColorTheme(this.state.combo, this.state.score, this.frameCount);
+                this.renderer.updateColorTheme(this.state.core.combo, this.state.core.score, this.frameCount);
             }
             
             // Spawn entities
@@ -6465,7 +6468,7 @@ var Game = (function () {
             // Update orders
             for (let i = this.orders.length - 1; i >= 0; i--) {
                 const order = this.orders[i];
-                if (!order.update(deltaTime, this.state.activePowerUps)) {
+                if (!order.update(deltaTime, this.state.powerUps)) {
                     // Order expired
                     this.orders.splice(i, 1);
                     this.state.loseLife();
@@ -6628,7 +6631,7 @@ var Game = (function () {
             if (powerUpStatus) {
                 powerUpStatus.innerHTML = '';
                 
-                for (const [type, powerUp] of Object.entries(this.state.activePowerUps)) {
+                for (const [type, powerUp] of Object.entries(this.state.powerUps)) {
                     if (powerUp.active) {
                         const indicator = document.createElement('div');
                         indicator.className = \`power-up-indicator \${type.toLowerCase().replace(/([A-Z])/g, '-$1').toLowerCase()}\`;
@@ -6650,7 +6653,8 @@ var Game = (function () {
          * Handle game over
          */
         gameOver() {
-            this.state.gameState = 'gameOver';
+            this.gameState = 'gameOver';
+            this.state.core.running = false;
             this.audioSystem.playGameOver();
             
             // Update high score
@@ -6732,7 +6736,8 @@ var Game = (function () {
             this.lastPowerUpSpawn = 0;
 
             // Set game state
-            this.state.gameState = 'playing';
+            this.gameState = 'playing';
+            this.state.core.running = true;
             
             // Start game loop
             this.lastTime = 0;
@@ -6749,7 +6754,8 @@ var Game = (function () {
             }
             
             this.audioSystem.stopBackgroundMusic();
-            this.state.gameState = 'stopped';
+            this.gameState = 'stopped';
+            this.state.core.running = false;
         }
         
         /**
