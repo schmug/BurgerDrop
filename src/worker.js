@@ -6777,8 +6777,8 @@ var Game = (function () {
                     showPerformanceUI: false
                 });
                 
-                // Start the game immediately
-                game.start();
+                // Don't start immediately - wait for user interaction
+                // game.start();
                 
                 // Setup UI event handlers
                 const audioToggle = document.getElementById('audioToggle');
