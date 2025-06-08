@@ -25,7 +25,7 @@ describe('InputExample - setupGameInput', () => {
   beforeEach(() => {
     // Reset mocks
     vi.clearAllMocks()
-    
+
     // Create mock canvas
     canvas = {
       width: 800,
@@ -54,6 +54,9 @@ describe('InputExample - setupGameInput', () => {
       resetCombo: vi.fn(),
       addScore: vi.fn()
     }
+
+    // Attach canvas to game state for helper functions
+    gameState.canvas = canvas
   })
   
   describe('Setup', () => {
