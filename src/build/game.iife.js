@@ -1097,6 +1097,14 @@ var Game = (function () {
             const randomType = types[Math.floor(Math.random() * types.length)];
             return new PowerUp(randomType, options);
         }
+
+        /**
+         * Get the raw power-up type configuration map
+         * @returns {Object} mapping of power-up types to their config
+         */
+        static getPowerUpTypes() {
+            return powerUpTypes;
+        }
         
         /**
          * Get all available power-up types
