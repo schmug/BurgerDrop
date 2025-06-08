@@ -562,7 +562,8 @@ export default class Game {
         // Update ingredients
         for (let i = this.ingredients.length - 1; i >= 0; i--) {
             const ingredient = this.ingredients[i];
-            ingredient.update(this.frameCount, this.state.activePowerUps);
+            // Pass deltaTime so ingredient physics stay consistent
+            ingredient.update(this.frameCount, this.state.activePowerUps, deltaTime);
             
             // Remove if off screen
             if (ingredient.y > this.canvas.height + 50) {

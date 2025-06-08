@@ -53,7 +53,7 @@ export class Order {
 
     /**
      * Update order state
-     * @param {number} deltaTime - Time elapsed since last frame in seconds
+     * @param {number} deltaTime - Time elapsed since last frame in milliseconds
      * @param {object} gameState - Game state for power-up checks
      * @returns {boolean} True if order is still valid, false if expired
      */

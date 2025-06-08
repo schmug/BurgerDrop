@@ -1323,7 +1323,8 @@ var Game = (function () {
          * @param {object} gameState - Game state for power-up checks
          * @param {number} deltaTime - Time elapsed since last frame
          */
-        update(frameCount, gameState, deltaTime = 1/60) {
+        update(frameCount, gameState, deltaTime = 16.67) {
+            // deltaTime is in ms
             this.animationTime += deltaTime;
             
             // Apply speed boost power-up if available
@@ -6108,7 +6109,7 @@ var Game = (function () {
             // Update ingredients
             for (let i = this.ingredients.length - 1; i >= 0; i--) {
                 const ingredient = this.ingredients[i];
-                ingredient.update(this.frameCount, this.state.activePowerUps);
+                ingredient.update(this.frameCount, this.state.activePowerUps, deltaTime);
                 
                 // Remove if off screen
                 if (ingredient.y > this.canvas.height + 50) {
