@@ -699,8 +699,7 @@ export default class Game {
         if (scoreElement) {
             scoreElement.textContent = `Score: ${this.state.core.score}`;
             // Score change animation handled by State events
-                // Animation could be triggered here if needed
-            }
+            // Animation could be triggered here if needed
         }
         
         // Update combo
@@ -708,8 +707,7 @@ export default class Game {
         if (comboElement) {
             comboElement.textContent = `Combo: x${this.state.core.combo}`;
             // Combo change animation handled by State events
-                // Animation could be triggered here if needed
-            }
+            // Animation could be triggered here if needed
         }
         
         // Update lives
@@ -717,8 +715,7 @@ export default class Game {
         if (livesElement) {
             livesElement.textContent = '❤️'.repeat(this.state.core.lives);
             // Lives change animation handled by State events
-                // Animation could be triggered here if needed
-            }
+            // Animation could be triggered here if needed
         }
         
         // Update power-up status
