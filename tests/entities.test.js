@@ -199,7 +199,11 @@ describe('Entity Classes', () => {
       const ingredient = new Ingredient('cheese', { y: 100 })
       const initialY = ingredient.y
       
+<<<<<<< HEAD
       ingredient.update(60, null) // Frame 60, no game state
+=======
+      ingredient.update(60, null, 16.67) // Frame 60, no game state (deltaTime in ms)
+>>>>>>> origin/main
       
       expect(ingredient.y).toBeGreaterThan(initialY)
     })
@@ -257,11 +261,43 @@ describe('Entity Classes', () => {
       
       // Update several times to build trail
       for (let i = 0; i < 5; i++) {
+<<<<<<< HEAD
         ingredient.update(i)
+=======
+        ingredient.update(i, undefined, 16.67)
+>>>>>>> origin/main
       }
       
       expect(ingredient.trail.length).toBeGreaterThan(0)
     })
+<<<<<<< HEAD
+=======
+
+    it('should fall consistently regardless of deltaTime', () => {
+      const a = new Ingredient('cheese', { y: 0, baseSpeed: 4 })
+      const b = new Ingredient('cheese', { y: 0, baseSpeed: 4 })
+
+      // Normalize speeds to avoid random variation
+      a.speed = 4
+      a.baseSpeed = 4
+      b.speed = 4
+      b.baseSpeed = 4
+
+      // Simulate 60fps for 1 second
+      for (let i = 0; i < 60; i++) {
+        a.update(i, null, 16.67)
+      }
+
+      // Simulate 30fps for the same total time
+      for (let i = 0; i < 30; i++) {
+        b.update(i * 2, null, 33.33)
+      }
+
+      // Due to frame based easing the motion is not perfectly frame-rate
+      // independent; allow a small tolerance based on observed behavior
+      expect(Math.abs(a.y - b.y)).toBeLessThan(40)
+    })
+>>>>>>> origin/main
   })
 
   describe('Order', () => {
