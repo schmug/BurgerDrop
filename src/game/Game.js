@@ -306,7 +306,7 @@ export default class Game {
         if (result !== 'wrong') {
             // Correct ingredient
             const points = this.calculatePoints(ingredient, correctOrder);
-            this.state.addScore(points);
+            this.state.updateScore(points);
             
             if (result === 'completed') {
                 // Order completed
@@ -436,9 +436,9 @@ export default class Game {
         // Combo multiplier
         const comboMultiplier = this.state.core.combo;
         
-        // Power-up multiplier
-        const powerUpMultiplier = this.state.activePowerUps.scoreMultiplier.active ? 
-            this.state.activePowerUps.scoreMultiplier.multiplier : 1;
+        // Power-up multiplier - fixed to use correct state path
+        const scoreMultiplier = this.state.powerUps?.scoreMultiplier;
+        const powerUpMultiplier = (scoreMultiplier?.active && scoreMultiplier?.multiplier) || 1;
         
         return Math.floor((basePoints + timeBonus) * comboMultiplier * powerUpMultiplier);
     }
@@ -594,7 +594,8 @@ export default class Game {
      * @param {number} deltaTime - Time since last update in milliseconds
      */
     update(deltaTime) {
-        if (this.gameState !== 'playing' || this.isPaused) return;
+        try {
+            if (this.gameState !== 'playing' || this.isPaused) return;
         
         this.frameCount++;
         
@@ -684,14 +685,19 @@ export default class Game {
         
         // Update UI
         this.updateUI();
+        } catch (error) {
+            console.error('Update error:', error);
+            throw error; // Re-throw to be caught by game loop
+        }
     }
     
     /**
      * Render game state
      */
     render() {
-        // Clear canvas
-        this.renderer.clear(this.canvas.width, this.canvas.height);
+        try {
+            // Clear canvas
+            this.renderer.clear(this.canvas.width, this.canvas.height);
         
         // Screen shake is applied via updateScreenShake
         // (legacy applyScreenShake call removed)
@@ -725,6 +731,16 @@ export default class Game {
         
         // Reset transform
         this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+        } catch (error) {
+            console.error('Render error:', error);
+            // Try to clear canvas to prevent visual artifacts
+            try {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            } catch (clearError) {
+                console.error('Failed to clear canvas:', clearError);
+            }
+            throw error; // Re-throw to be caught by game loop
+        }
     }
     
     /**
@@ -732,29 +748,34 @@ export default class Game {
      * @param {number} currentTime - Current timestamp
      */
     gameLoop(currentTime) {
-        if (!this.lastTime) {
+        try {
+            if (!this.lastTime) {
+                this.lastTime = currentTime;
+            }
+            
+            // Update performance monitoring
+            this.performanceMonitor.update(currentTime);
+            
+            this.deltaTime = currentTime - this.lastTime;
             this.lastTime = currentTime;
+            this.frameCount++;
+            
+            this.update(this.deltaTime);
+            this.render();
+            
+            // Update performance UI
+            this.performanceUI.update(currentTime, {
+                particles: this.particles,
+                ingredients: this.ingredients,
+                powerUps: this.powerUps,
+                renderer: this.renderer
+            });
+            
+            this.animationId = requestAnimationFrame((time) => this.gameLoop(time));
+        } catch (error) {
+            console.error('Game loop error:', error);
+            this.handleGameError(error);
         }
-        
-        // Update performance monitoring
-        this.performanceMonitor.update(currentTime);
-        
-        this.deltaTime = currentTime - this.lastTime;
-        this.lastTime = currentTime;
-        this.frameCount++;
-        
-        this.update(this.deltaTime);
-        this.render();
-        
-        // Update performance UI
-        this.performanceUI.update(currentTime, {
-            particles: this.particles,
-            ingredients: this.ingredients,
-            powerUps: this.powerUps,
-            renderer: this.renderer
-        });
-        
-        this.animationId = requestAnimationFrame((time) => this.gameLoop(time));
     }
     
     /**
@@ -797,7 +818,10 @@ export default class Game {
         // Update power-up status
         const powerUpStatus = document.getElementById('powerUpStatus');
         if (powerUpStatus) {
-            powerUpStatus.innerHTML = '';
+            // Clear children safely
+            while (powerUpStatus.firstChild) {
+                powerUpStatus.removeChild(powerUpStatus.firstChild);
+            }
             
             for (const [type, powerUp] of Object.entries(this.state.powerUps)) {
                 if (powerUp.active) {
@@ -805,11 +829,20 @@ export default class Game {
                     indicator.className = `power-up-indicator ${type.toLowerCase().replace(/([A-Z])/g, '-$1').toLowerCase()}`;
                     
                     const powerUpData = PowerUp.getPowerUpTypes()[type];
-                    indicator.innerHTML = `
-                        <span>${powerUpData.emoji}</span>
-                        <span>${powerUpData.name}</span>
-                        <span class="power-up-timer">${Math.ceil(powerUp.timeLeft / 1000)}s</span>
-                    `;
+                    
+                    // Create elements safely to prevent XSS
+                    const emojiSpan = document.createElement('span');
+                    emojiSpan.textContent = powerUpData.emoji;
+                    indicator.appendChild(emojiSpan);
+                    
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = powerUpData.name;
+                    indicator.appendChild(nameSpan);
+                    
+                    const timerSpan = document.createElement('span');
+                    timerSpan.className = 'power-up-timer';
+                    timerSpan.textContent = `${Math.ceil(powerUp.timeLeft / 1000)}s`;
+                    indicator.appendChild(timerSpan);
                     
                     powerUpStatus.appendChild(indicator);
                 }
@@ -990,6 +1023,60 @@ export default class Game {
         Object.entries(stats).forEach(([poolName, poolStats]) => {
             console.log(`  ${poolName}:`, poolStats);
         });
+    }
+    
+    /**
+     * Handle game errors
+     * @param {Error} error - The error that occurred
+     */
+    handleGameError(error) {
+        // Log error details
+        console.error('Game Error Details:', {
+            error: error.message,
+            stack: error.stack,
+            gameState: this.gameState,
+            frameCount: this.frameCount
+        });
+        
+        // Initialize error count if needed
+        if (this.errorCount === undefined) this.errorCount = 0;
+        this.errorCount++;
+        
+        if (this.errorCount < 3) {
+            // Attempt to recover
+            console.warn('Attempting to recover from error...');
+            this.animationId = requestAnimationFrame((time) => this.gameLoop(time));
+        } else {
+            // Too many errors, stop the game
+            this.gameState = 'error';
+            this.showErrorMessage('Game encountered an error. Please refresh to restart.');
+        }
+    }
+    
+    /**
+     * Show error message to user
+     * @param {string} message - Error message to display
+     */
+    showErrorMessage(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'game-error-message';
+        errorDiv.textContent = message;
+        errorDiv.style.cssText = `
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 0, 0, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 9999;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        `;
+        document.body.appendChild(errorDiv);
     }
     
     /**
