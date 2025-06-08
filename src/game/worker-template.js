@@ -23,7 +23,8 @@ export default {
             <span style="font-size: 36px;">🍔</span>
             <span>Burger Drop!</span>
         </div>
-        <div class="score-display" id="scoreDisplay">Score: 0</div>
+        <div class="score-display" id="score">Score: 0</div>
+        <div class="lives-display" id="lives">❤️❤️❤️</div>
         <button class="audio-toggle" id="audioToggle" aria-label="Toggle Audio">🔊</button>
     </div>
 

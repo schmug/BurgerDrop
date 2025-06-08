@@ -77,6 +77,11 @@ body {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
+.lives-display {
+    font-size: 24px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
 .audio-toggle {
     background: #FFD700;
     border: 3px solid #FFA500;

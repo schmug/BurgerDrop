@@ -160,11 +160,11 @@ export class Ingredient {
         // Smooth falling motion with easing
         this.fallProgress += 0.02;
         const fallEase = easing.easeInQuad(Math.min(this.fallProgress, 1));
-        this.y += this.speed * (0.5 + fallEase * 0.5) * deltaTime * 60;
+        this.y += this.speed * (0.5 + fallEase * 0.5) * (deltaTime / 16.67); // Normalize to 60fps
         
         // Add subtle horizontal sway
         const swayAmount = Math.sin(frameCount * 0.05 + this.sway * Math.PI) * 0.5;
-        this.x += swayAmount * deltaTime * 60;
+        this.x += swayAmount * (deltaTime / 16.67); // Normalize to 60fps
         
         // Smooth rotation with easing
         this.rotation += this.rotationSpeed * (1 + fallEase * 0.5);
