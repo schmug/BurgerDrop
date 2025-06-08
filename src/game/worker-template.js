@@ -34,6 +34,10 @@ export default {
         <canvas id="gameCanvas"></canvas>
     </div>
 
+    <div id="startScreen">
+        <button class="play-again-btn" id="startButton">Start Game</button>
+    </div>
+
     <div class="game-over-overlay" id="gameOverOverlay">
         <div class="game-over-content">
             <h1 class="game-over-title">Game Over! 🍔</h1>
@@ -54,9 +58,6 @@ export default {
                     enablePerformanceMonitoring: false,
                     showPerformanceUI: false
                 });
-                
-                // Start the game immediately
-                game.start();
                 
                 // Setup UI event handlers
                 const audioToggle = document.getElementById('audioToggle');
