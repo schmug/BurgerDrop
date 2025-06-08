@@ -171,11 +171,19 @@ export class AudioSystem {
      */
     setupUserInteractionHandlers() {
         const resumeAudio = () => {
-            if (this.audioContext && this.audioContext.state === 'suspended') {
-                this.audioContext.resume();
+            if (!this.audioContext) return;
+
+            if (this.audioContext.state === 'suspended') {
+                this.audioContext.resume().then(() => {
+                    if (this.settings.music > 0 && !this.backgroundMusic.playing) {
+                        this.startBackgroundMusic();
+                    }
+                });
+            } else if (this.settings.music > 0 && !this.backgroundMusic.playing) {
+                this.startBackgroundMusic();
             }
         };
-        
+
         document.addEventListener('click', resumeAudio, { once: true });
         document.addEventListener('touchstart', resumeAudio, { once: true });
     }
@@ -340,7 +348,13 @@ export class AudioSystem {
      * Start background music
      */
     startBackgroundMusic() {
-        if (!this.audioContext || !this.enabled || this.backgroundMusic.playing || this.settings.music === 0) {
+        if (
+            !this.audioContext ||
+            !this.enabled ||
+            this.backgroundMusic.playing ||
+            this.settings.music === 0 ||
+            this.audioContext.state === 'suspended'
+        ) {
             return;
         }
         

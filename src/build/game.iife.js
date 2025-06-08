@@ -2,11 +2,29 @@ var Game = (function () {
     'use strict';
 
     /**
+     * Storage utility functions
+     * Provides safe access to localStorage in environments
+     * where storage access may be restricted.
+     */
+
+    function isLocalStorageAvailable() {
+        try {
+            const key = '__storage_test__';
+            window.localStorage.setItem(key, key);
+            window.localStorage.removeItem(key);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    /**
      * Game State Management
      * 
      * Centralized state management system replacing global variables.
      * Provides event-driven architecture with validation and debugging capabilities.
-     */
+    */
+
 
     class GameState {
         constructor() {
@@ -124,6 +142,21 @@ var Game = (function () {
         updateFrameCount(deltaTime) {
             this.core.frameCount++;
             this.core.lastTime = performance.now();
+        }
+
+        /**
+         * Update overall game state each frame
+         * @param {number} deltaTime - Time elapsed since last update in seconds
+         */
+        update(deltaTime) {
+            // Advance frame counter and timestamp
+            this.updateFrameCount(deltaTime);
+
+            // Update active power-up timers
+            this.updatePowerUps(deltaTime);
+
+            // Recalculate level based on score
+            this.updateLevel();
         }
 
         /**
@@ -296,19 +329,23 @@ var Game = (function () {
          * High score persistence
          */
         loadHighScore() {
-            try {
-                return parseInt(localStorage.getItem('burgerDropHighScore') || '0');
-            } catch (e) {
-                console.warn('Could not load high score from localStorage');
-                return 0;
+            if (isLocalStorageAvailable()) {
+                try {
+                    return parseInt(localStorage.getItem('burgerDropHighScore') || '0');
+                } catch (e) {
+                    console.warn('Could not load high score from localStorage');
+                }
             }
+            return 0;
         }
 
         saveHighScore() {
-            try {
-                localStorage.setItem('burgerDropHighScore', this.core.highScore.toString());
-            } catch (e) {
-                console.warn('Could not save high score to localStorage');
+            if (isLocalStorageAvailable()) {
+                try {
+                    localStorage.setItem('burgerDropHighScore', this.core.highScore.toString());
+                } catch (e) {
+                    console.warn('Could not save high score to localStorage');
+                }
             }
         }
 
@@ -1082,6 +1119,14 @@ var Game = (function () {
             const randomType = types[Math.floor(Math.random() * types.length)];
             return new PowerUp(randomType, options);
         }
+
+        /**
+         * Get the raw power-up type configuration map
+         * @returns {Object} mapping of power-up types to their config
+         */
+        static getPowerUpTypes() {
+            return powerUpTypes;
+        }
         
         /**
          * Get all available power-up types
@@ -1352,7 +1397,13 @@ var Game = (function () {
             for (let i = 0; i < this.trail.length - 1; i++) {
                 const point = this.trail[i];
                 const nextPoint = this.trail[i + 1];
-                
+
+                // Skip if coordinates are not finite to avoid rendering errors
+                if (!Number.isFinite(point.x) || !Number.isFinite(point.y) ||
+                    !Number.isFinite(nextPoint.x) || !Number.isFinite(nextPoint.y)) {
+                    continue;
+                }
+
                 // Draw line segment with gradient
                 const gradient = ctx.createLinearGradient(
                     point.x, point.y, nextPoint.x, nextPoint.y
@@ -2133,11 +2184,19 @@ var Game = (function () {
          */
         setupUserInteractionHandlers() {
             const resumeAudio = () => {
-                if (this.audioContext && this.audioContext.state === 'suspended') {
-                    this.audioContext.resume();
+                if (!this.audioContext) return;
+
+                if (this.audioContext.state === 'suspended') {
+                    this.audioContext.resume().then(() => {
+                        if (this.settings.music > 0 && !this.backgroundMusic.playing) {
+                            this.startBackgroundMusic();
+                        }
+                    });
+                } else if (this.settings.music > 0 && !this.backgroundMusic.playing) {
+                    this.startBackgroundMusic();
                 }
             };
-            
+
             document.addEventListener('click', resumeAudio, { once: true });
             document.addEventListener('touchstart', resumeAudio, { once: true });
         }
@@ -2302,7 +2361,13 @@ var Game = (function () {
          * Start background music
          */
         startBackgroundMusic() {
-            if (!this.audioContext || !this.enabled || this.backgroundMusic.playing || this.settings.music === 0) {
+            if (
+                !this.audioContext ||
+                !this.enabled ||
+                this.backgroundMusic.playing ||
+                this.settings.music === 0 ||
+                this.audioContext.state === 'suspended'
+            ) {
                 return;
             }
             
@@ -6002,7 +6067,9 @@ var Game = (function () {
                     // Order expired
                     this.orders.splice(i, 1);
                     this.state.loseLife();
-                    this.audioSystem.playOrderExpire();
+                    if (typeof this.audioSystem.playOrderExpired === 'function') {
+                        this.audioSystem.playOrderExpired();
+                    }
                     this.renderer.startScreenShake(20, 30);
                     
                     // Check game over
@@ -6053,8 +6120,8 @@ var Game = (function () {
             // Clear canvas
             this.renderer.clear(this.canvas.width, this.canvas.height);
             
-            // Apply screen shake
-            this.renderer.applyScreenShake();
+            // Screen shake is applied via updateScreenShake
+            // (legacy applyScreenShake call removed)
             
             // Draw background
             this.renderer.drawBackground(this.canvas.width, this.canvas.height);
@@ -6079,8 +6146,9 @@ var Game = (function () {
                 particle.draw(this.ctx, this.frameCount);
             });
             
-            // Apply screen flash
-            this.renderer.applyScreenFlash(this.canvas.width, this.canvas.height);
+
+            // Draw overlay effects like flashes and ripples
+            this.renderer.drawScreenEffects();
             
             // Reset transform
             this.ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -6202,13 +6270,15 @@ var Game = (function () {
          * Load high score from localStorage
          */
         loadHighScore() {
-            try {
-                const savedScore = localStorage.getItem('burgerDropHighScore');
-                if (savedScore) {
-                    this.state.highScore = parseInt(savedScore) || 0;
+            if (isLocalStorageAvailable()) {
+                try {
+                    const savedScore = localStorage.getItem('burgerDropHighScore');
+                    if (savedScore) {
+                        this.state.highScore = parseInt(savedScore) || 0;
+                    }
+                } catch (e) {
+                    console.warn('Could not load high score:', e);
                 }
-            } catch (e) {
-                console.warn('Could not load high score:', e);
             }
         }
         
@@ -6216,10 +6286,12 @@ var Game = (function () {
          * Save high score to localStorage
          */
         saveHighScore() {
-            try {
-                localStorage.setItem('burgerDropHighScore', this.state.highScore.toString());
-            } catch (e) {
-                console.warn('Could not save high score:', e);
+            if (isLocalStorageAvailable()) {
+                try {
+                    localStorage.setItem('burgerDropHighScore', this.state.highScore.toString());
+                } catch (e) {
+                    console.warn('Could not save high score:', e);
+                }
             }
         }
         
@@ -6256,10 +6328,7 @@ var Game = (function () {
             this.frameCount = 0;
             this.lastSpawn = 0;
             this.lastPowerUpSpawn = 0;
-            
-            // Start background music
-            this.audioSystem.startBackgroundMusic();
-            
+
             // Set game state
             this.state.gameState = 'playing';
             

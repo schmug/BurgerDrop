@@ -18,6 +18,7 @@ import { clamp, lerp, randomRange } from './utils/Math.js';
 import { ObjectPool, PoolManager } from './utils/ObjectPool.js';
 import PerformanceMonitor from './utils/PerformanceMonitor.js';
 import PerformanceUI from './utils/PerformanceUI.js';
+import { isLocalStorageAvailable } from './utils/Storage.js';
 
 /**
  * Main Game class that manages the game loop and coordinates all systems
@@ -567,7 +568,9 @@ export default class Game {
                 // Order expired
                 this.orders.splice(i, 1);
                 this.state.loseLife();
-                this.audioSystem.playOrderExpire();
+                if (typeof this.audioSystem.playOrderExpired === 'function') {
+                    this.audioSystem.playOrderExpired();
+                }
                 this.renderer.startScreenShake(20, 30);
                 
                 // Check game over
@@ -618,8 +621,8 @@ export default class Game {
         // Clear canvas
         this.renderer.clear(this.canvas.width, this.canvas.height);
         
-        // Apply screen shake
-        this.renderer.applyScreenShake();
+        // Screen shake is applied via updateScreenShake
+        // (legacy applyScreenShake call removed)
         
         // Draw background
         this.renderer.drawBackground(this.canvas.width, this.canvas.height);
@@ -644,8 +647,9 @@ export default class Game {
             particle.draw(this.ctx, this.frameCount);
         });
         
-        // Apply screen flash
-        this.renderer.applyScreenFlash(this.canvas.width, this.canvas.height);
+
+        // Draw overlay effects like flashes and ripples
+        this.renderer.drawScreenEffects();
         
         // Reset transform
         this.ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -767,13 +771,15 @@ export default class Game {
      * Load high score from localStorage
      */
     loadHighScore() {
-        try {
-            const savedScore = localStorage.getItem('burgerDropHighScore');
-            if (savedScore) {
-                this.state.highScore = parseInt(savedScore) || 0;
+        if (isLocalStorageAvailable()) {
+            try {
+                const savedScore = localStorage.getItem('burgerDropHighScore');
+                if (savedScore) {
+                    this.state.highScore = parseInt(savedScore) || 0;
+                }
+            } catch (e) {
+                console.warn('Could not load high score:', e);
             }
-        } catch (e) {
-            console.warn('Could not load high score:', e);
         }
     }
     
@@ -781,10 +787,12 @@ export default class Game {
      * Save high score to localStorage
      */
     saveHighScore() {
-        try {
-            localStorage.setItem('burgerDropHighScore', this.state.highScore.toString());
-        } catch (e) {
-            console.warn('Could not save high score:', e);
+        if (isLocalStorageAvailable()) {
+            try {
+                localStorage.setItem('burgerDropHighScore', this.state.highScore.toString());
+            } catch (e) {
+                console.warn('Could not save high score:', e);
+            }
         }
     }
     
@@ -821,10 +829,7 @@ export default class Game {
         this.frameCount = 0;
         this.lastSpawn = 0;
         this.lastPowerUpSpawn = 0;
-        
-        // Start background music
-        this.audioSystem.startBackgroundMusic();
-        
+
         // Set game state
         this.state.gameState = 'playing';
         

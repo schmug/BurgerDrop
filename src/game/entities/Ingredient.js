@@ -241,13 +241,13 @@ export class Ingredient {
         for (let i = 0; i < this.trail.length - 1; i++) {
             const point = this.trail[i];
             const nextPoint = this.trail[i + 1];
-            
-            // Validate point coordinates
-            if (!isFinite(point.x) || !isFinite(point.y) || 
-                !isFinite(nextPoint.x) || !isFinite(nextPoint.y)) {
+
+            // Skip if coordinates are not finite to avoid rendering errors
+            if (!Number.isFinite(point.x) || !Number.isFinite(point.y) ||
+                !Number.isFinite(nextPoint.x) || !Number.isFinite(nextPoint.y)) {
                 continue;
             }
-            
+
             // Draw line segment with gradient
             const gradient = ctx.createLinearGradient(
                 point.x, point.y, nextPoint.x, nextPoint.y
