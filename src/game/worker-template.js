@@ -53,11 +53,80 @@ export default {
                     enablePerformanceMonitoring: false,
                     showPerformanceUI: false
                 });
-                game.start();
+                
+                // Don't start immediately - wait for user interaction
+                // game.start();
                 
                 // Setup UI event handlers
                 const audioToggle = document.getElementById('audioToggle');
                 const playAgainBtn = document.getElementById('playAgainBtn');
+                const startButton = document.getElementById('startButton');
+                const resumeButton = document.getElementById('resumeButton');
+                const restartButton = document.getElementById('restartButton');
+                const quitButton = document.getElementById('quitButton');
+                const menuButton = document.getElementById('menuButton');
+                
+                // Start button handler
+                if (startButton) {
+                    startButton.addEventListener('click', () => {
+                        const startScreen = document.getElementById('startScreen');
+                        if (startScreen) {
+                            startScreen.style.display = 'none';
+                        }
+                        game.start();
+                    });
+                }
+                
+                // Resume button handler
+                if (resumeButton) {
+                    resumeButton.addEventListener('click', () => {
+                        const pauseScreen = document.getElementById('pauseScreen');
+                        if (pauseScreen) {
+                            pauseScreen.style.display = 'none';
+                        }
+                        game.resume();
+                    });
+                }
+                
+                // Restart button handler  
+                if (restartButton) {
+                    restartButton.addEventListener('click', () => {
+                        const gameOverScreen = document.getElementById('gameOverScreen');
+                        if (gameOverScreen) {
+                            gameOverScreen.style.display = 'none';
+                        }
+                        game.start();
+                    });
+                }
+                
+                // Quit button handler
+                if (quitButton) {
+                    quitButton.addEventListener('click', () => {
+                        const pauseScreen = document.getElementById('pauseScreen');
+                        if (pauseScreen) {
+                            pauseScreen.style.display = 'none';
+                        }
+                        const startScreen = document.getElementById('startScreen');
+                        if (startScreen) {
+                            startScreen.style.display = '';
+                        }
+                        game.stop();
+                    });
+                }
+                
+                // Menu button handler
+                if (menuButton) {
+                    menuButton.addEventListener('click', () => {
+                        const gameOverScreen = document.getElementById('gameOverScreen');
+                        if (gameOverScreen) {
+                            gameOverScreen.style.display = 'none';
+                        }
+                        const startScreen = document.getElementById('startScreen');
+                        if (startScreen) {
+                            startScreen.style.display = '';
+                        }
+                    });
+                }
                 
                 if (audioToggle) {
                     audioToggle.addEventListener('click', () => {
