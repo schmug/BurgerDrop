@@ -182,7 +182,7 @@ const mockUI = () => {
             <div id="combo">Combo: x1</div>
             <div id="lives">❤️❤️❤️</div>
             <div id="powerUpStatus"></div>
-            <div id="gameOver" style="display: none;">
+            <div id="gameOverOverlay" style="display: none;">
                 <p id="finalScore">Final Score: 0</p>
                 <p id="highScore">High Score: 0</p>
             </div>
@@ -538,7 +538,7 @@ describe('Game Integration', () => {
             game.update(16);
             
             expect(game.state.gameState).toBe('gameOver');
-            expect(document.getElementById('gameOver').style.display).toBe('block');
+            expect(document.getElementById('gameOverOverlay').style.display).toBe('block');
         });
 
         it('should update high score if current score is higher', () => {

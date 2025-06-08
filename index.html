@@ -109,6 +109,20 @@ body {
     transform: scale(0.95);
 }
 
+#startScreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    backdrop-filter: blur(5px);
+}
+
 .game-over-overlay {
     position: fixed;
     top: 0;
@@ -302,7 +316,11 @@ body {
         <canvas id="gameCanvas"></canvas>
     </div>
 
-    <div class="game-over-overlay" id="gameOver">
+    <div id="startScreen">
+        <button class="play-again-btn" id="startButton">Start Game</button>
+    </div>
+
+    <div class="game-over-overlay" id="gameOverOverlay">
         <div class="game-over-content">
             <h1 class="game-over-title">Game Over! 🍔</h1>
             <div class="final-score">Final Score: <span id="finalScore">0</span></div>
@@ -321,8 +339,19 @@ body {
                     enablePerformanceMonitoring: false,
                     showPerformanceUI: false
                 });
-                game.start();
-                
+
+                const startButton = document.getElementById('startButton');
+                const startScreen = document.getElementById('startScreen');
+
+                if (startButton) {
+                    startButton.addEventListener('click', () => {
+                        if (startScreen) {
+                            startScreen.style.display = 'none';
+                        }
+                        game.start();
+                    });
+                }
+
                 // Setup UI event handlers
                 const audioToggle = document.getElementById('audioToggle');
                 const playAgainBtn = document.getElementById('playAgainBtn');
@@ -336,7 +365,7 @@ body {
                 
                 if (playAgainBtn) {
                     playAgainBtn.addEventListener('click', () => {
-                        document.getElementById('gameOver').style.display = 'none';
+                        document.getElementById('gameOverOverlay').style.display = 'none';
                         game.start();
                     });
                 }

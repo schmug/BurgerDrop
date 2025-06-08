@@ -34,6 +34,10 @@ export default {
         <canvas id="gameCanvas"></canvas>
     </div>
 
+    <div id="startScreen">
+        <button class="play-again-btn" id="startButton">Start Game</button>
+    </div>
+
     <div class="game-over-overlay" id="gameOverOverlay">
         <div class="game-over-content">
             <h1 class="game-over-title">Game Over! 🍔</h1>
@@ -54,9 +58,6 @@ export default {
                     enablePerformanceMonitoring: false,
                     showPerformanceUI: false
                 });
-                
-                // Start the game immediately
-                game.start();
                 
                 // Setup UI event handlers
                 const audioToggle = document.getElementById('audioToggle');
@@ -92,9 +93,9 @@ export default {
                 // Restart button handler  
                 if (restartButton) {
                     restartButton.addEventListener('click', () => {
-                        const gameOverScreen = document.getElementById('gameOverScreen');
-                        if (gameOverScreen) {
-                            gameOverScreen.style.display = 'none';
+                        const gameOverOverlay = document.getElementById('gameOverOverlay');
+                        if (gameOverOverlay) {
+                            gameOverOverlay.style.display = 'none';
                         }
                         game.start();
                     });
@@ -118,9 +119,9 @@ export default {
                 // Menu button handler
                 if (menuButton) {
                     menuButton.addEventListener('click', () => {
-                        const gameOverScreen = document.getElementById('gameOverScreen');
-                        if (gameOverScreen) {
-                            gameOverScreen.style.display = 'none';
+                        const gameOverOverlay = document.getElementById('gameOverOverlay');
+                        if (gameOverOverlay) {
+                            gameOverOverlay.style.display = 'none';
                         }
                         const startScreen = document.getElementById('startScreen');
                         if (startScreen) {

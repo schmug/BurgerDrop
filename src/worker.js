@@ -119,6 +119,20 @@ body {
     transform: scale(0.95);
 }
 
+#startScreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    backdrop-filter: blur(5px);
+}
+
 .game-over-overlay {
     position: fixed;
     top: 0;
@@ -311,6 +325,10 @@ body {
 
     <div class="game-container">
         <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <div id="startScreen">
+        <button class="play-again-btn" id="startButton">Start Game</button>
     </div>
 
     <div class="game-over-overlay" id="gameOverOverlay">
@@ -1648,7 +1666,8 @@ var Game = (function () {
          * @param {object} gameState - Game state for power-up checks
          * @param {number} deltaTime - Time elapsed since last frame
          */
-        update(frameCount, gameState, deltaTime = 1/60) {
+        // deltaTime is expected in milliseconds; default assumes ~60fps
+        update(frameCount, gameState, deltaTime = 16.67) {
             this.animationTime += deltaTime;
             
             // Apply speed boost power-up if available
@@ -2006,7 +2025,7 @@ var Game = (function () {
 
         /**
          * Update order state
-         * @param {number} deltaTime - Time elapsed since last frame in seconds
+         * @param {number} deltaTime - Time elapsed since last frame in milliseconds
          * @param {object} gameState - Game state for power-up checks
          * @returns {boolean} True if order is still valid, false if expired
          */
@@ -6433,7 +6452,8 @@ var Game = (function () {
             // Update ingredients
             for (let i = this.ingredients.length - 1; i >= 0; i--) {
                 const ingredient = this.ingredients[i];
-                ingredient.update(this.frameCount, this.state, this.deltaTime);
+                // Pass deltaTime so ingredient physics stay consistent
+                ingredient.update(this.frameCount, this.state, deltaTime);
                 
                 // Remove if off screen
                 if (ingredient.y > this.canvas.height + 50) {
@@ -6634,17 +6654,17 @@ var Game = (function () {
             this.audioSystem.playGameOver();
             
             // Update high score
-            if (this.state.score > this.state.highScore) {
-                this.state.highScore = this.state.score;
+            if (this.state.core.score > this.state.core.highScore) {
+                this.state.core.highScore = this.state.core.score;
                 this.saveHighScore();
             }
             
             // Show game over screen
-            const gameOverElement = document.getElementById('gameOver');
+            const gameOverElement = document.getElementById('gameOverOverlay');
             if (gameOverElement) {
                 gameOverElement.style.display = 'block';
-                document.getElementById('finalScore').textContent = \`Final Score: \${this.state.score}\`;
-                document.getElementById('highScore').textContent = \`High Score: \${this.state.highScore}\`;
+                document.getElementById('finalScore').textContent = \`Final Score: \${this.state.core.score}\`;
+                document.getElementById('highScore').textContent = \`High Score: \${this.state.core.highScore}\`;
             }
         }
         
@@ -6656,7 +6676,7 @@ var Game = (function () {
                 try {
                     const savedScore = localStorage.getItem('burgerDropHighScore');
                     if (savedScore) {
-                        this.state.highScore = parseInt(savedScore) || 0;
+                        this.state.core.highScore = parseInt(savedScore) || 0;
                     }
                 } catch (e) {
                     console.warn('Could not load high score:', e);
@@ -6670,7 +6690,7 @@ var Game = (function () {
         saveHighScore() {
             if (isLocalStorageAvailable()) {
                 try {
-                    localStorage.setItem('burgerDropHighScore', this.state.highScore.toString());
+                    localStorage.setItem('burgerDropHighScore', this.state.core.highScore.toString());
                 } catch (e) {
                     console.warn('Could not save high score:', e);
                 }
@@ -6856,9 +6876,6 @@ var Game = (function () {
                     showPerformanceUI: false
                 });
                 
-                // Start the game immediately
-                game.start();
-                
                 // Setup UI event handlers
                 const audioToggle = document.getElementById('audioToggle');
                 const playAgainBtn = document.getElementById('playAgainBtn');
@@ -6893,9 +6910,9 @@ var Game = (function () {
                 // Restart button handler  
                 if (restartButton) {
                     restartButton.addEventListener('click', () => {
-                        const gameOverScreen = document.getElementById('gameOverScreen');
-                        if (gameOverScreen) {
-                            gameOverScreen.style.display = 'none';
+                        const gameOverOverlay = document.getElementById('gameOverOverlay');
+                        if (gameOverOverlay) {
+                            gameOverOverlay.style.display = 'none';
                         }
                         game.start();
                     });
@@ -6919,9 +6936,9 @@ var Game = (function () {
                 // Menu button handler
                 if (menuButton) {
                     menuButton.addEventListener('click', () => {
-                        const gameOverScreen = document.getElementById('gameOverScreen');
-                        if (gameOverScreen) {
-                            gameOverScreen.style.display = 'none';
+                        const gameOverOverlay = document.getElementById('gameOverOverlay');
+                        if (gameOverOverlay) {
+                            gameOverOverlay.style.display = 'none';
                         }
                         const startScreen = document.getElementById('startScreen');
                         if (startScreen) {

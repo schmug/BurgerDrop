@@ -147,7 +147,8 @@ export class Ingredient {
      * @param {object} gameState - Game state for power-up checks
      * @param {number} deltaTime - Time elapsed since last frame
      */
-    update(frameCount, gameState, deltaTime = 1/60) {
+    // deltaTime is expected in milliseconds; default assumes ~60fps
+    update(frameCount, gameState, deltaTime = 16.67) {
         this.animationTime += deltaTime;
         
         // Apply speed boost power-up if available

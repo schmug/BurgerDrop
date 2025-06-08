@@ -199,7 +199,7 @@ describe('Entity Classes', () => {
       const ingredient = new Ingredient('cheese', { y: 100 })
       const initialY = ingredient.y
       
-      ingredient.update(60, null) // Frame 60, no game state
+      ingredient.update(60, null, 16.67) // Frame 60, no game state (deltaTime in ms)
       
       expect(ingredient.y).toBeGreaterThan(initialY)
     })
@@ -257,10 +257,27 @@ describe('Entity Classes', () => {
       
       // Update several times to build trail
       for (let i = 0; i < 5; i++) {
-        ingredient.update(i)
+        ingredient.update(i, undefined, 16.67)
       }
       
       expect(ingredient.trail.length).toBeGreaterThan(0)
+    })
+
+    it('should fall consistently regardless of deltaTime', () => {
+      const a = new Ingredient('cheese', { y: 0, baseSpeed: 4 })
+      const b = new Ingredient('cheese', { y: 0, baseSpeed: 4 })
+
+      // Simulate 60fps for 1 second
+      for (let i = 0; i < 60; i++) {
+        a.update(i, null, 16.67)
+      }
+
+      // Simulate 30fps for the same total time
+      for (let i = 0; i < 30; i++) {
+        b.update(i * 2, null, 33.33)
+      }
+
+      expect(Math.abs(a.y - b.y)).toBeLessThan(1)
     })
   })
 

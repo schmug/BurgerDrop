@@ -562,7 +562,8 @@ export default class Game {
         // Update ingredients
         for (let i = this.ingredients.length - 1; i >= 0; i--) {
             const ingredient = this.ingredients[i];
-            ingredient.update(this.frameCount, this.state, this.deltaTime);
+            // Pass deltaTime so ingredient physics stay consistent
+            ingredient.update(this.frameCount, this.state, deltaTime);
             
             // Remove if off screen
             if (ingredient.y > this.canvas.height + 50) {
@@ -763,17 +764,17 @@ export default class Game {
         this.audioSystem.playGameOver();
         
         // Update high score
-        if (this.state.score > this.state.highScore) {
-            this.state.highScore = this.state.score;
+        if (this.state.core.score > this.state.core.highScore) {
+            this.state.core.highScore = this.state.core.score;
             this.saveHighScore();
         }
         
         // Show game over screen
-        const gameOverElement = document.getElementById('gameOver');
+        const gameOverElement = document.getElementById('gameOverOverlay');
         if (gameOverElement) {
             gameOverElement.style.display = 'block';
-            document.getElementById('finalScore').textContent = `Final Score: ${this.state.score}`;
-            document.getElementById('highScore').textContent = `High Score: ${this.state.highScore}`;
+            document.getElementById('finalScore').textContent = `Final Score: ${this.state.core.score}`;
+            document.getElementById('highScore').textContent = `High Score: ${this.state.core.highScore}`;
         }
     }
     
@@ -785,7 +786,7 @@ export default class Game {
             try {
                 const savedScore = localStorage.getItem('burgerDropHighScore');
                 if (savedScore) {
-                    this.state.highScore = parseInt(savedScore) || 0;
+                    this.state.core.highScore = parseInt(savedScore) || 0;
                 }
             } catch (e) {
                 console.warn('Could not load high score:', e);
@@ -799,7 +800,7 @@ export default class Game {
     saveHighScore() {
         if (isLocalStorageAvailable()) {
             try {
-                localStorage.setItem('burgerDropHighScore', this.state.highScore.toString());
+                localStorage.setItem('burgerDropHighScore', this.state.core.highScore.toString());
             } catch (e) {
                 console.warn('Could not save high score:', e);
             }
