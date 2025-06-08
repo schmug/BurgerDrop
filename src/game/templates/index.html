@@ -18,7 +18,7 @@
             <span style="font-size: 36px;">🍔</span>
             <span>Burger Drop!</span>
         </div>
-        <div class="score-display" id="scoreDisplay">Score: 0</div>
+        <div class="score-display" id="score">Score: 0</div>
         <button class="audio-toggle" id="audioToggle" aria-label="Toggle Audio">🔊</button>
     </div>
 
@@ -28,7 +28,7 @@
         <canvas id="gameCanvas"></canvas>
     </div>
 
-    <div class="game-over-overlay" id="gameOverOverlay">
+    <div class="game-over-overlay" id="gameOver">
         <div class="game-over-content">
             <h1 class="game-over-title">Game Over! 🍔</h1>
             <div class="final-score">Final Score: <span id="finalScore">0</span></div>
@@ -61,7 +61,7 @@
                 
                 if (playAgainBtn) {
                     playAgainBtn.addEventListener('click', () => {
-                        document.getElementById('gameOverOverlay').style.display = 'none';
+                        document.getElementById('gameOver').style.display = 'none';
                         game.start();
                     });
                 }
