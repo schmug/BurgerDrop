@@ -124,6 +124,18 @@ export class GameState {
         this.core.frameCount++;
         this.core.lastTime = performance.now();
     }
+    
+    /**
+     * Main update method - updates all state-related systems
+     * @param {number} deltaTime - Time elapsed since last frame
+     */
+    update(deltaTime) {
+        // Update power-ups
+        this.updatePowerUps(deltaTime);
+        
+        // Update frame count
+        this.updateFrameCount(deltaTime);
+    }
 
     /**
      * Update overall game state each frame

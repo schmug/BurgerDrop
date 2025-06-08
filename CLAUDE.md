@@ -113,6 +113,19 @@ The project includes a comprehensive testing framework using Vitest:
 - `npm run test:coverage` - Run tests with coverage report
 - `wrangler login` - Authenticate with Cloudflare (required once)
 
+## Development Workflow
+
+### Building and Deploying Changes
+
+After making substantial changes to the game:
+
+1. **Build the game**: Run `npm run build` to bundle the game and inject it into the worker
+2. **Test locally**: Run `npm run dev` and test at http://localhost:8787
+3. **Commit changes**: Stage all changes with `git add -A`, then commit with a descriptive message
+4. **Push to deploy**: Push to the main branch to trigger automatic deployment via GitHub Actions
+
+**Important**: The game won't work in production until the build process is run and changes are deployed. Always ensure `npm run build` is run before committing when game code is modified.
+
 ## Setup Requirements
 
 For deployment, add these GitHub repository secrets:

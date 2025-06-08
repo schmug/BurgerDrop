@@ -358,6 +358,22 @@ export class AudioSystem {
             return;
         }
         
+        // Resume audio context if suspended (handles autoplay restrictions)
+        if (this.audioContext.state === 'suspended') {
+            this.audioContext.resume().then(() => {
+                this._startBackgroundMusicInternal();
+            }).catch(err => {
+                console.warn('Failed to resume audio context:', err);
+            });
+        } else {
+            this._startBackgroundMusicInternal();
+        }
+    }
+    
+    /**
+     * Internal method to actually start background music
+     */
+    _startBackgroundMusicInternal() {
         // Create master gain node for music
         if (!this.musicGainNode) {
             this.musicGainNode = this.audioContext.createGain();
@@ -429,36 +445,45 @@ export class AudioSystem {
             return;
         }
         
-        const noteIndex = Math.floor(Math.random() * musicNotes.melody.length);
-        const frequency = musicNotes.melody[noteIndex];
-        const musicVolume = this.settings.master * this.settings.music * 0.1;
+        // Check if audio context is suspended
+        if (this.audioContext.state === 'suspended') {
+            return;
+        }
         
-        const melodyOsc = this.audioContext.createOscillator();
-        const melodyGain = this.audioContext.createGain();
-        
-        melodyOsc.connect(melodyGain);
-        melodyGain.connect(this.musicGainNode);
-        
-        melodyOsc.type = 'sine';
-        melodyOsc.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
-        
-        melodyGain.gain.setValueAtTime(0, this.audioContext.currentTime);
-        melodyGain.gain.linearRampToValueAtTime(musicVolume, this.audioContext.currentTime + 0.1);
-        melodyGain.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 1.5);
-        
-        melodyOsc.start();
-        melodyOsc.stop(this.audioContext.currentTime + 2);
-        
-        // Cleanup after note finishes
-        melodyOsc.addEventListener('ended', () => {
-            const oscIndex = this.backgroundMusic.oscillators.indexOf(melodyOsc);
-            const gainIndex = this.backgroundMusic.gainNodes.indexOf(melodyGain);
-            if (oscIndex > -1) this.backgroundMusic.oscillators.splice(oscIndex, 1);
-            if (gainIndex > -1) this.backgroundMusic.gainNodes.splice(gainIndex, 1);
-        });
-        
-        this.backgroundMusic.oscillators.push(melodyOsc);
-        this.backgroundMusic.gainNodes.push(melodyGain);
+        try {
+            const noteIndex = Math.floor(Math.random() * musicNotes.melody.length);
+            const frequency = musicNotes.melody[noteIndex];
+            const musicVolume = this.settings.master * this.settings.music * 0.1;
+            
+            const melodyOsc = this.audioContext.createOscillator();
+            const melodyGain = this.audioContext.createGain();
+            
+            melodyOsc.connect(melodyGain);
+            melodyGain.connect(this.musicGainNode);
+            
+            melodyOsc.type = 'sine';
+            melodyOsc.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+            
+            melodyGain.gain.setValueAtTime(0, this.audioContext.currentTime);
+            melodyGain.gain.linearRampToValueAtTime(musicVolume, this.audioContext.currentTime + 0.1);
+            melodyGain.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 1.5);
+            
+            melodyOsc.start();
+            melodyOsc.stop(this.audioContext.currentTime + 2);
+            
+            // Cleanup after note finishes
+            melodyOsc.addEventListener('ended', () => {
+                const oscIndex = this.backgroundMusic.oscillators.indexOf(melodyOsc);
+                const gainIndex = this.backgroundMusic.gainNodes.indexOf(melodyGain);
+                if (oscIndex > -1) this.backgroundMusic.oscillators.splice(oscIndex, 1);
+                if (gainIndex > -1) this.backgroundMusic.gainNodes.splice(gainIndex, 1);
+            });
+            
+            this.backgroundMusic.oscillators.push(melodyOsc);
+            this.backgroundMusic.gainNodes.push(melodyGain);
+        } catch (err) {
+            console.warn('Failed to play melody note:', err);
+        }
     }
     
     /**

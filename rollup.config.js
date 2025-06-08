@@ -1,52 +1,25 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import terser from '@rollup/plugin-terser';
-import { string } from 'rollup-plugin-string';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Two-step build process
-export default [
-  // Step 1: Build the game as an IIFE bundle
-  {
-    input: 'src/game/Game.js',
-    output: {
-      file: 'src/build/game.iife.js',
-      format: 'iife',
-      name: 'Game',
-      exports: 'default',
-      sourcemap: false
-    },
-    plugins: [
-      nodeResolve(),
-      isProduction && terser({
-        compress: {
-          drop_console: true,
-          drop_debugger: true
-        }
-      })
-    ].filter(Boolean)
+// Build the game as an IIFE bundle
+export default {
+  input: 'src/game/Game.js',
+  output: {
+    file: 'src/build/game.js',
+    format: 'iife',
+    name: 'Game',
+    exports: 'default',
+    sourcemap: false
   },
-  
-  // Step 2: Build the Cloudflare worker that serves the static game
-  {
-    input: 'src/game/worker-static.js',
-    output: {
-      file: 'src/worker.js',
-      format: 'es',
-      banner: '// BurgerDrop Game - Static worker build\n// Auto-generated - do not edit directly',
-      sourcemap: !isProduction
-    },
-    plugins: [
-      string({
-        include: ['**/*.css', '**/*.html', '**/*.iife.js']
-      }),
-      nodeResolve(),
-      isProduction && terser({
-        compress: {
-          drop_console: true,
-          drop_debugger: true
-        }
-      })
-    ].filter(Boolean)
-  }
-];
+  plugins: [
+    nodeResolve(),
+    isProduction && terser({
+      compress: {
+        drop_console: true,
+        drop_debugger: true
+      }
+    })
+  ].filter(Boolean)
+};
