@@ -93,6 +93,11 @@ body {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
+.lives-display {
+    font-size: 24px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
 .audio-toggle {
     background: #FFD700;
     border: 3px solid #FFA500;
@@ -297,7 +302,8 @@ body {
             <span style="font-size: 36px;">🍔</span>
             <span>Burger Drop!</span>
         </div>
-        <div class="score-display" id="scoreDisplay">Score: 0</div>
+        <div class="score-display" id="score">Score: 0</div>
+        <div class="lives-display" id="lives">❤️❤️❤️</div>
         <button class="audio-toggle" id="audioToggle" aria-label="Toggle Audio">🔊</button>
     </div>
 
@@ -1655,11 +1661,11 @@ var Game = (function () {
             // Smooth falling motion with easing
             this.fallProgress += 0.02;
             const fallEase = easing.easeInQuad(Math.min(this.fallProgress, 1));
-            this.y += this.speed * (0.5 + fallEase * 0.5) * deltaTime * 60;
+            this.y += this.speed * (0.5 + fallEase * 0.5) * (deltaTime / 16.67); // Normalize to 60fps
             
             // Add subtle horizontal sway
             const swayAmount = Math.sin(frameCount * 0.05 + this.sway * Math.PI) * 0.5;
-            this.x += swayAmount * deltaTime * 60;
+            this.x += swayAmount * (deltaTime / 16.67); // Normalize to 60fps
             
             // Smooth rotation with easing
             this.rotation += this.rotationSpeed * (1 + fallEase * 0.5);
