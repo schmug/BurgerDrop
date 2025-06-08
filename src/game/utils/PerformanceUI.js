@@ -81,6 +81,29 @@ export class PerformanceUI {
     }
     
     /**
+     * Helper function to create elements safely
+     */
+    createElement(tag, className = null, textContent = null) {
+        const element = document.createElement(tag);
+        if (className) element.className = className;
+        if (textContent) element.textContent = textContent;
+        return element;
+    }
+    
+    /**
+     * Helper function to create labeled value element
+     */
+    createLabeledValue(label, id) {
+        const container = document.createElement('div');
+        container.textContent = label + ': ';
+        const span = document.createElement('span');
+        span.id = id;
+        span.textContent = '--';
+        container.appendChild(span);
+        return container;
+    }
+    
+    /**
      * Get container CSS styles based on position
      */
     getContainerStyles() {
@@ -113,14 +136,24 @@ export class PerformanceUI {
      */
     createFPSSection() {
         const section = document.createElement('div');
-        section.innerHTML = `
-            <div style="font-weight: bold; margin-bottom: 5px;">🎯 Performance</div>
-            <div>FPS: <span id="perf-fps">--</span></div>
-            <div>Avg: <span id="perf-avg-fps">--</span></div>
-            <div>Min: <span id="perf-min-fps">--</span></div>
-            <div>Frame: <span id="perf-frame-time">--</span>ms</div>
-            <div>Drops: <span id="perf-drops">--</span></div>
-        `;
+        
+        // Create title
+        const title = this.createElement('div');
+        title.style.fontWeight = 'bold';
+        title.style.marginBottom = '5px';
+        title.textContent = '🎯 Performance';
+        section.appendChild(title);
+        
+        // Create metric elements
+        section.appendChild(this.createLabeledValue('FPS', 'perf-fps'));
+        section.appendChild(this.createLabeledValue('Avg', 'perf-avg-fps'));
+        section.appendChild(this.createLabeledValue('Min', 'perf-min-fps'));
+        
+        const frameDiv = this.createLabeledValue('Frame', 'perf-frame-time');
+        frameDiv.appendChild(document.createTextNode('ms'));
+        section.appendChild(frameDiv);
+        
+        section.appendChild(this.createLabeledValue('Drops', 'perf-drops'));
         
         this.container.appendChild(section);
         
@@ -138,13 +171,19 @@ export class PerformanceUI {
     createQualitySection() {
         const section = document.createElement('div');
         section.style.marginTop = '10px';
-        section.innerHTML = `
-            <div style="font-weight: bold; margin-bottom: 5px;">⚙️ Quality</div>
-            <div>Level: <span id="perf-quality-level">--</span></div>
-            <div>Particles: <span id="perf-max-particles">--</span></div>
-            <div>Shadows: <span id="perf-shadows">--</span></div>
-            <div>Effects: <span id="perf-effects">--</span></div>
-        `;
+        
+        // Create title
+        const title = this.createElement('div');
+        title.style.fontWeight = 'bold';
+        title.style.marginBottom = '5px';
+        title.textContent = '⚙️ Quality';
+        section.appendChild(title);
+        
+        // Create metric elements
+        section.appendChild(this.createLabeledValue('Level', 'perf-quality-level'));
+        section.appendChild(this.createLabeledValue('Particles', 'perf-max-particles'));
+        section.appendChild(this.createLabeledValue('Shadows', 'perf-shadows'));
+        section.appendChild(this.createLabeledValue('Effects', 'perf-effects'));
         
         this.container.appendChild(section);
         
@@ -160,12 +199,18 @@ export class PerformanceUI {
     createPoolsSection() {
         const section = document.createElement('div');
         section.style.marginTop = '10px';
-        section.innerHTML = `
-            <div style="font-weight: bold; margin-bottom: 5px;">🎱 Object Pools</div>
-            <div id="perf-pools-content">
-                <!-- Pool stats will be inserted here -->
-            </div>
-        `;
+        
+        // Create title
+        const title = this.createElement('div');
+        title.style.fontWeight = 'bold';
+        title.style.marginBottom = '5px';
+        title.textContent = '🎱 Object Pools';
+        section.appendChild(title);
+        
+        // Create content container
+        const content = document.createElement('div');
+        content.id = 'perf-pools-content';
+        section.appendChild(content);
         
         this.container.appendChild(section);
         this.elements.poolsContent = document.getElementById('perf-pools-content');
@@ -177,13 +222,19 @@ export class PerformanceUI {
     createDetailsSection() {
         const section = document.createElement('div');
         section.style.marginTop = '10px';
-        section.innerHTML = `
-            <div style="font-weight: bold; margin-bottom: 5px;">📊 Details</div>
-            <div>Memory: <span id="perf-memory">--</span></div>
-            <div>Entities: <span id="perf-entities">--</span></div>
-            <div>Draw Calls: <span id="perf-draw-calls">--</span></div>
-            <div>Performance: <span id="perf-health">--</span></div>
-        `;
+        
+        // Create title
+        const title = this.createElement('div');
+        title.style.fontWeight = 'bold';
+        title.style.marginBottom = '5px';
+        title.textContent = '📊 Details';
+        section.appendChild(title);
+        
+        // Create metric elements
+        section.appendChild(this.createLabeledValue('Memory', 'perf-memory'));
+        section.appendChild(this.createLabeledValue('Entities', 'perf-entities'));
+        section.appendChild(this.createLabeledValue('Draw Calls', 'perf-draw-calls'));
+        section.appendChild(this.createLabeledValue('Performance', 'perf-health'));
         
         this.container.appendChild(section);
         
@@ -199,10 +250,22 @@ export class PerformanceUI {
     createGraphSection() {
         const section = document.createElement('div');
         section.style.marginTop = '10px';
-        section.innerHTML = `
-            <div style="font-weight: bold; margin-bottom: 5px;">📈 FPS Graph</div>
-            <canvas id="perf-graph" width="180" height="50" style="background: rgba(255,255,255,0.1); border-radius: 3px;"></canvas>
-        `;
+        
+        // Create title
+        const title = this.createElement('div');
+        title.style.fontWeight = 'bold';
+        title.style.marginBottom = '5px';
+        title.textContent = '📈 FPS Graph';
+        section.appendChild(title);
+        
+        // Create canvas
+        const canvas = document.createElement('canvas');
+        canvas.id = 'perf-graph';
+        canvas.width = 180;
+        canvas.height = 50;
+        canvas.style.background = 'rgba(255,255,255,0.1)';
+        canvas.style.borderRadius = '3px';
+        section.appendChild(canvas);
         
         this.container.appendChild(section);
         this.elements.graph = document.getElementById('perf-graph');
@@ -214,7 +277,7 @@ export class PerformanceUI {
      */
     createToggleButton() {
         const button = document.createElement('button');
-        button.innerHTML = '👁️';
+        button.textContent = '👁️';
         button.style.cssText = `
             position: absolute;
             top: -5px;
@@ -331,22 +394,33 @@ export class PerformanceUI {
      */
     updatePoolsDisplay() {
         const poolStats = this.poolManager.getStats();
-        let html = '';
-        
-        for (const [name, stats] of Object.entries(poolStats)) {
-            const utilization = ((stats.activeCount / (stats.poolSize + stats.activeCount)) * 100).toFixed(0);
-            const efficiency = (stats.reuseRatio * 100).toFixed(0);
-            
-            html += `
-                <div style="font-size: 10px; margin: 2px 0;">
-                    <div>${name}: ${stats.activeCount}/${stats.poolSize + stats.activeCount}</div>
-                    <div style="color: #888;">Use: ${utilization}% | Reuse: ${efficiency}%</div>
-                </div>
-            `;
-        }
         
         if (this.elements.poolsContent) {
-            this.elements.poolsContent.innerHTML = html;
+            // Clear existing content
+            while (this.elements.poolsContent.firstChild) {
+                this.elements.poolsContent.removeChild(this.elements.poolsContent.firstChild);
+            }
+            
+            // Create pool stat elements
+            for (const [name, stats] of Object.entries(poolStats)) {
+                const utilization = ((stats.activeCount / (stats.poolSize + stats.activeCount)) * 100).toFixed(0);
+                const efficiency = (stats.reuseRatio * 100).toFixed(0);
+                
+                const poolDiv = document.createElement('div');
+                poolDiv.style.fontSize = '10px';
+                poolDiv.style.margin = '2px 0';
+                
+                const nameDiv = document.createElement('div');
+                nameDiv.textContent = `${name}: ${stats.activeCount}/${stats.poolSize + stats.activeCount}`;
+                poolDiv.appendChild(nameDiv);
+                
+                const statsDiv = document.createElement('div');
+                statsDiv.style.color = '#888';
+                statsDiv.textContent = `Use: ${utilization}% | Reuse: ${efficiency}%`;
+                poolDiv.appendChild(statsDiv);
+                
+                this.elements.poolsContent.appendChild(poolDiv);
+            }
         }
     }
     
