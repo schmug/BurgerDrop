@@ -102,6 +102,13 @@ vi.mock('../src/game/State.js', () => {
             }
         }
         
+        endGame() {
+            this.gameState = 'gameOver';
+            if (this.score > this.highScore) {
+                this.highScore = this.score;
+            }
+        }
+        
         activatePowerUp(type, duration = 10000) {
             if (this.activePowerUps[type]) {
                 this.activePowerUps[type].active = true;

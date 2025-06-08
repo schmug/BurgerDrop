@@ -745,14 +745,8 @@ export default class Game {
      * Handle game over
      */
     gameOver() {
-        this.state.gameState = 'gameOver';
+        this.state.endGame();
         this.audioSystem.playGameOver();
-        
-        // Update high score
-        if (this.state.score > this.state.highScore) {
-            this.state.highScore = this.state.score;
-            this.saveHighScore();
-        }
         
         // Show game over screen
         const gameOverElement = document.getElementById('gameOver');
@@ -825,8 +819,7 @@ export default class Game {
         // Start background music
         this.audioSystem.startBackgroundMusic();
         
-        // Set game state
-        this.state.gameState = 'playing';
+        // Game state is already set to 'playing' by this.state.startGame()
         
         // Start game loop
         this.lastTime = 0;

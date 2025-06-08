@@ -7,6 +7,13 @@
 
 export class GameState {
     constructor() {
+        // Internal state storage
+        this._gameState = 'menu';
+        this._score = 0;
+        this._lives = 3;
+        this._combo = 1;
+        this._highScore = 0;
+        
         // Core game state
         this.core = {
             running: false,
@@ -18,6 +25,9 @@ export class GameState {
             lastTime: 0,
             highScore: this.loadHighScore()
         };
+        
+        // Initialize legacy properties from core
+        this._highScore = this.core.highScore;
 
         // Entity collections
         this.entities = {
@@ -27,12 +37,13 @@ export class GameState {
             particles: []
         };
 
-        // Power-up state
+        // Power-up state (both new and legacy naming)
         this.powerUps = {
             speedBoost: { active: false, timeLeft: 0, multiplier: 0.5 },
             timeFreeze: { active: false, timeLeft: 0 },
             scoreMultiplier: { active: false, timeLeft: 0, multiplier: 2 }
         };
+        this.activePowerUps = this.powerUps; // Legacy compatibility
 
         // UI state
         this.ui = {
@@ -68,26 +79,65 @@ export class GameState {
         };
     }
 
+    // Legacy compatibility - property getters and setters
+    get gameState() { return this._gameState; }
+    set gameState(value) { 
+        this._gameState = value;
+        this.core.running = (value === 'playing');
+    }
+
+    get score() { return this._score; }
+    set score(value) { 
+        this._score = value;
+        this.core.score = value;
+    }
+
+    get lives() { return this._lives; }
+    set lives(value) { 
+        this._lives = value;
+        this.core.lives = value;
+    }
+
+    get combo() { return this._combo; }
+    set combo(value) { 
+        this._combo = value;
+        this.core.combo = value;
+    }
+
+    get highScore() { return this._highScore; }
+    set highScore(value) { 
+        this._highScore = value;
+        this.core.highScore = value;
+    }
+
     /**
      * Core game state mutations
      */
     updateScore(points) {
         const oldScore = this.core.score;
         this.core.score += Math.floor(points);
+        this._score = this.core.score; // Keep legacy property in sync
         
         // Update high score if needed
         if (this.core.score > this.core.highScore) {
             this.core.highScore = this.core.score;
+            this._highScore = this.core.highScore; // Keep legacy property in sync
             this.saveHighScore();
             this.emit('newHighScore', this.core.highScore);
         }
         
         this.emit('scoreChanged', { old: oldScore, new: this.core.score });
     }
+    
+    // Legacy compatibility method
+    addScore(points) {
+        this.updateScore(points);
+    }
 
     updateCombo(value) {
         const oldCombo = this.core.combo;
         this.core.combo = Math.max(1, Math.min(value, 10)); // Cap at 10
+        this._combo = this.core.combo; // Keep legacy property in sync
         this.emit('comboChanged', { old: oldCombo, new: this.core.combo });
     }
 
@@ -102,6 +152,7 @@ export class GameState {
     loseLife() {
         const oldLives = this.core.lives;
         this.core.lives = Math.max(0, this.core.lives - 1);
+        this._lives = this.core.lives; // Keep legacy property in sync
         this.emit('livesChanged', { old: oldLives, new: this.core.lives });
         
         if (this.core.lives === 0) {
@@ -121,6 +172,16 @@ export class GameState {
     updateFrameCount(deltaTime) {
         this.core.frameCount++;
         this.core.lastTime = performance.now();
+    }
+
+    /**
+     * Main update method called by Game.js
+     * @param {number} deltaTime - Time since last update in milliseconds
+     */
+    update(deltaTime) {
+        this.updateFrameCount(deltaTime);
+        this.updatePowerUps(deltaTime / 1000); // Convert to seconds for power-ups
+        this.updateLevel();
     }
 
     /**
@@ -241,6 +302,12 @@ export class GameState {
         this.core.level = 1;
         this.core.frameCount = 0;
         
+        // Update legacy compatibility properties
+        this._gameState = 'playing';
+        this._score = 0;
+        this._lives = 3;
+        this._combo = 1;
+        
         // Clear all entities
         Object.keys(this.entities).forEach(type => {
             this.clearEntities(type);
@@ -262,10 +329,12 @@ export class GameState {
 
     endGame() {
         this.core.running = false;
+        this._gameState = 'gameOver';
         
         // Save high score
         if (this.core.score > this.core.highScore) {
             this.core.highScore = this.core.score;
+            this._highScore = this.core.highScore; // Keep legacy property in sync
             this.saveHighScore();
         }
         
