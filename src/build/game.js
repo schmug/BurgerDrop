@@ -23,7 +23,7 @@ var Game = (function () {
      * 
      * Centralized state management system replacing global variables.
      * Provides event-driven architecture with validation and debugging capabilities.
-     */
+    */
 
 
     class GameState {
@@ -142,6 +142,33 @@ var Game = (function () {
         updateFrameCount(deltaTime) {
             this.core.frameCount++;
             this.core.lastTime = performance.now();
+        }
+        
+        /**
+         * Main update method - updates all state-related systems
+         * @param {number} deltaTime - Time elapsed since last frame
+         */
+        update(deltaTime) {
+            // Update power-ups
+            this.updatePowerUps(deltaTime);
+            
+            // Update frame count
+            this.updateFrameCount(deltaTime);
+        }
+
+        /**
+         * Update overall game state each frame
+         * @param {number} deltaTime - Time elapsed since last update in seconds
+         */
+        update(deltaTime) {
+            // Advance frame counter and timestamp
+            this.updateFrameCount(deltaTime);
+
+            // Update active power-up timers
+            this.updatePowerUps(deltaTime);
+
+            // Recalculate level based on score
+            this.updateLevel();
         }
 
         /**
@@ -314,19 +341,23 @@ var Game = (function () {
          * High score persistence
          */
         loadHighScore() {
-            try {
-                return parseInt(localStorage.getItem('burgerDropHighScore') || '0');
-            } catch (e) {
-                console.warn('Could not load high score from localStorage');
-                return 0;
+            if (isLocalStorageAvailable()) {
+                try {
+                    return parseInt(localStorage.getItem('burgerDropHighScore') || '0');
+                } catch (e) {
+                    console.warn('Could not load high score from localStorage');
+                }
             }
+            return 0;
         }
 
         saveHighScore() {
-            try {
-                localStorage.setItem('burgerDropHighScore', this.core.highScore.toString());
-            } catch (e) {
-                console.warn('Could not save high score to localStorage');
+            if (isLocalStorageAvailable()) {
+                try {
+                    localStorage.setItem('burgerDropHighScore', this.core.highScore.toString());
+                } catch (e) {
+                    console.warn('Could not save high score to localStorage');
+                }
             }
         }
 
@@ -918,6 +949,14 @@ var Game = (function () {
     };
 
     class PowerUp {
+        /**
+         * Get all available power-up types
+         * @returns {object} Power-up type configurations
+         */
+        static getPowerUpTypes() {
+            return powerUpTypes;
+        }
+        
         /**
          * Create a new power-up
          * @param {string} type - Power-up type ('speedBoost', 'timeFreeze', 'scoreMultiplier')
@@ -2700,39 +2739,6 @@ var Game = (function () {
      * Colors respond to game state (combo level and score) for enhanced visual feedback.
      */
 
-    /**
-     * Main color theme object with dynamic colors
-     */
-    const colorTheme = {
-        primary: '#FFD700',
-        secondary: '#FF6347', 
-        accent: '#00FF88',
-        warning: '#FF4444',
-        hue: 0
-    };
-
-    /**
-     * Update color theme based on game state
-     * @param {number} combo - Current combo multiplier
-     * @param {number} score - Current game score
-     * @param {number} frameCount - Current frame count for animations
-     */
-    function updateColorTheme(combo, score, frameCount) {
-        // Base hue changes based on combo level
-        const targetHue = Math.min((combo - 1) * 30, 300); // Max 300 degrees for rainbow effect
-        colorTheme.hue += (targetHue - colorTheme.hue) * 0.1; // Smooth transition
-        
-        // Score-based saturation and brightness
-        const scoreFactor = Math.min(score / 1000, 1); // Normalize to 0-1
-        const saturation = 50 + (scoreFactor * 50); // 50-100%
-        const lightness = 45 + (Math.sin(frameCount * 0.05) * 10); // Subtle pulsing 35-55%
-        
-        // Update theme colors
-        colorTheme.primary = `hsl(${colorTheme.hue + 45}, ${saturation}%, ${lightness + 15}%)`;
-        colorTheme.secondary = `hsl(${colorTheme.hue + 15}, ${saturation}%, ${lightness}%)`;
-        colorTheme.accent = `hsl(${colorTheme.hue + 120}, ${saturation}%, ${lightness}%)`;
-        colorTheme.warning = `hsl(${0}, ${saturation + 20}%, ${lightness}%)`;
-    }
 
     /**
      * Create texture patterns for visual enhancement
@@ -2875,9 +2881,6 @@ var Game = (function () {
                 fabric: null,
                 paper: null
             };
-
-            // Current color theme
-            this.colorTheme = { ...colorTheme };
             
             // Screen effects
             this.screenEffects = {
@@ -3449,66 +3452,6 @@ var Game = (function () {
          */
         getPatterns() {
             return { ...this.patterns };
-        }
-
-        /**
-         * Update the renderer color theme. Can accept either a color object
-         * or the combo/score/frame parameters used by the utils module.
-         */
-        updateColorTheme(comboOrColors, score, frameCount) {
-            if (typeof comboOrColors === 'object') {
-                this.colorTheme = { ...comboOrColors };
-            } else {
-                updateColorTheme(comboOrColors, score, frameCount);
-                this.colorTheme = { ...colorTheme };
-            }
-        }
-
-        /**
-         * Draw a simple trail from an array of points
-         */
-        drawTrail(trail, color = '#FFFFFF') {
-            if (!Array.isArray(trail) || trail.length === 0) return;
-            this.ctx.save();
-            this.ctx.strokeStyle = color;
-            this.ctx.beginPath();
-            this.ctx.moveTo(trail[0].x, trail[0].y);
-            for (let i = 1; i < trail.length; i++) {
-                this.ctx.lineTo(trail[i].x, trail[i].y);
-            }
-            this.ctx.stroke();
-            this.ctx.restore();
-        }
-
-        /**
-         * Draw a particle object
-         */
-        drawParticle(particle) {
-            if (!particle) return;
-            const { x = 0, y = 0, color = '#FFFFFF', size = 2, text, life = 1 } = particle;
-            this.ctx.save();
-            this.ctx.globalAlpha = life;
-            this.ctx.fillStyle = color;
-            if (text) {
-                this.ctx.font = `${size * 4 || 16}px Arial`;
-                this.ctx.textAlign = 'center';
-                this.ctx.textBaseline = 'middle';
-                this.ctx.fillText(text, x, y);
-            } else {
-                this.ctx.beginPath();
-                this.ctx.arc(x, y, size, 0, Math.PI * 2);
-                this.ctx.fill();
-            }
-            this.ctx.restore();
-        }
-
-        /**
-         * Show floating text using a particles array
-         */
-        showFloatingText(x, y, text, color, particles) {
-            if (Array.isArray(particles)) {
-                particles.push({ x, y, text, color });
-            }
         }
         
         /**
@@ -5255,28 +5198,25 @@ var Game = (function () {
             title.textContent = '🎯 Performance';
             section.appendChild(title);
             
-            // Create metric elements with direct references
-            const fpsDiv = this.createLabeledValue('FPS', 'perf-fps');
-            const avgDiv = this.createLabeledValue('Avg', 'perf-avg-fps');
-            const minDiv = this.createLabeledValue('Min', 'perf-min-fps');
+            // Create metric elements
+            section.appendChild(this.createLabeledValue('FPS', 'perf-fps'));
+            section.appendChild(this.createLabeledValue('Avg', 'perf-avg-fps'));
+            section.appendChild(this.createLabeledValue('Min', 'perf-min-fps'));
+            
             const frameDiv = this.createLabeledValue('Frame', 'perf-frame-time');
             frameDiv.appendChild(document.createTextNode('ms'));
-            const dropsDiv = this.createLabeledValue('Drops', 'perf-drops');
-            
-            section.appendChild(fpsDiv);
-            section.appendChild(avgDiv);
-            section.appendChild(minDiv);
             section.appendChild(frameDiv);
-            section.appendChild(dropsDiv);
+            
+            section.appendChild(this.createLabeledValue('Drops', 'perf-drops'));
             
             this.container.appendChild(section);
             
-            // Store element references directly
-            this.elements.fps = fpsDiv.querySelector('span');
-            this.elements.avgFps = avgDiv.querySelector('span');
-            this.elements.minFps = minDiv.querySelector('span');
-            this.elements.frameTime = frameDiv.querySelector('span');
-            this.elements.drops = dropsDiv.querySelector('span');
+            // Store element references
+            this.elements.fps = document.getElementById('perf-fps');
+            this.elements.avgFps = document.getElementById('perf-avg-fps');
+            this.elements.minFps = document.getElementById('perf-min-fps');
+            this.elements.frameTime = document.getElementById('perf-frame-time');
+            this.elements.drops = document.getElementById('perf-drops');
         }
         
         /**
@@ -5293,24 +5233,18 @@ var Game = (function () {
             title.textContent = '⚙️ Quality';
             section.appendChild(title);
             
-            // Create metric elements with direct references
-            const levelDiv = this.createLabeledValue('Level', 'perf-quality-level');
-            const particlesDiv = this.createLabeledValue('Particles', 'perf-max-particles');
-            const shadowsDiv = this.createLabeledValue('Shadows', 'perf-shadows');
-            const effectsDiv = this.createLabeledValue('Effects', 'perf-effects');
-            
-            section.appendChild(levelDiv);
-            section.appendChild(particlesDiv);
-            section.appendChild(shadowsDiv);
-            section.appendChild(effectsDiv);
+            // Create metric elements
+            section.appendChild(this.createLabeledValue('Level', 'perf-quality-level'));
+            section.appendChild(this.createLabeledValue('Particles', 'perf-max-particles'));
+            section.appendChild(this.createLabeledValue('Shadows', 'perf-shadows'));
+            section.appendChild(this.createLabeledValue('Effects', 'perf-effects'));
             
             this.container.appendChild(section);
             
-            // Store element references directly
-            this.elements.qualityLevel = levelDiv.querySelector('span');
-            this.elements.maxParticles = particlesDiv.querySelector('span');
-            this.elements.shadows = shadowsDiv.querySelector('span');
-            this.elements.effects = effectsDiv.querySelector('span');
+            this.elements.qualityLevel = document.getElementById('perf-quality-level');
+            this.elements.maxParticles = document.getElementById('perf-max-particles');
+            this.elements.shadows = document.getElementById('perf-shadows');
+            this.elements.effects = document.getElementById('perf-effects');
         }
         
         /**
@@ -5333,9 +5267,7 @@ var Game = (function () {
             section.appendChild(content);
             
             this.container.appendChild(section);
-            
-            // Store element reference directly
-            this.elements.poolsContent = content;
+            this.elements.poolsContent = document.getElementById('perf-pools-content');
         }
         
         /**
@@ -5352,24 +5284,18 @@ var Game = (function () {
             title.textContent = '📊 Details';
             section.appendChild(title);
             
-            // Create metric elements with direct references
-            const memoryDiv = this.createLabeledValue('Memory', 'perf-memory');
-            const entitiesDiv = this.createLabeledValue('Entities', 'perf-entities');
-            const drawCallsDiv = this.createLabeledValue('Draw Calls', 'perf-draw-calls');
-            const healthDiv = this.createLabeledValue('Performance', 'perf-health');
-            
-            section.appendChild(memoryDiv);
-            section.appendChild(entitiesDiv);
-            section.appendChild(drawCallsDiv);
-            section.appendChild(healthDiv);
+            // Create metric elements
+            section.appendChild(this.createLabeledValue('Memory', 'perf-memory'));
+            section.appendChild(this.createLabeledValue('Entities', 'perf-entities'));
+            section.appendChild(this.createLabeledValue('Draw Calls', 'perf-draw-calls'));
+            section.appendChild(this.createLabeledValue('Performance', 'perf-health'));
             
             this.container.appendChild(section);
             
-            // Store element references directly
-            this.elements.memory = memoryDiv.querySelector('span');
-            this.elements.entities = entitiesDiv.querySelector('span');
-            this.elements.drawCalls = drawCallsDiv.querySelector('span');
-            this.elements.health = healthDiv.querySelector('span');
+            this.elements.memory = document.getElementById('perf-memory');
+            this.elements.entities = document.getElementById('perf-entities');
+            this.elements.drawCalls = document.getElementById('perf-draw-calls');
+            this.elements.health = document.getElementById('perf-health');
         }
         
         /**
@@ -5396,10 +5322,8 @@ var Game = (function () {
             section.appendChild(canvas);
             
             this.container.appendChild(section);
-            
-            // Store element reference directly
-            this.elements.graph = canvas;
-            this.graphCtx = canvas.getContext('2d');
+            this.elements.graph = document.getElementById('perf-graph');
+            this.graphCtx = this.elements.graph.getContext('2d');
         }
         
         /**
@@ -5807,7 +5731,14 @@ var Game = (function () {
             this.lastPowerUpSpawn = 0;
             
             // Order templates
-            this.orderTemplates = orderTemplates;
+            this.orderTemplates = [
+                { name: 'Classic Burger', ingredients: ['bun_bottom', 'patty', 'cheese', 'lettuce', 'tomato', 'bun_top'], time: 30 },
+                { name: 'Simple Burger', ingredients: ['bun_bottom', 'patty', 'bun_top'], time: 20 },
+                { name: 'Cheese Burger', ingredients: ['bun_bottom', 'patty', 'cheese', 'bun_top'], time: 25 },
+                { name: 'Veggie Burger', ingredients: ['bun_bottom', 'lettuce', 'tomato', 'onion', 'pickle', 'bun_top'], time: 30 },
+                { name: 'Bacon Burger', ingredients: ['bun_bottom', 'patty', 'bacon', 'cheese', 'bun_top'], time: 35 },
+                { name: 'Breakfast Burger', ingredients: ['bun_bottom', 'patty', 'egg', 'bacon', 'cheese', 'bun_top'], time: 40 }
+            ];
             
             // Bind methods
             this.update = this.update.bind(this);
@@ -6160,9 +6091,9 @@ var Game = (function () {
             this.state.incrementCombo(5);
             
             // Bonus points
-            const bonusPoints = Math.floor(100 * this.state.core.combo * 
-                (this.state.powerUps.scoreMultiplier.active ? 2 : 1));
-            this.state.updateScore(bonusPoints);
+            const bonusPoints = Math.floor(100 * this.state.combo * 
+                (this.state.activePowerUps.scoreMultiplier.active ? 2 : 1));
+            this.state.addScore(bonusPoints);
             
             // Play success sound
             this.audioSystem.playOrderComplete();

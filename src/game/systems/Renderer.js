@@ -5,7 +5,7 @@
  * custom graphics, and dynamic visual features.
  */
 
-import { colorTheme, createTexturePattern } from '../utils/Colors.js';
+import { colorTheme, createTexturePattern, updateColorTheme as utilUpdateColorTheme } from '../utils/Colors.js';
 
 export class Renderer {
     constructor(canvas, options = {}) {
@@ -24,6 +24,9 @@ export class Renderer {
             fabric: null,
             paper: null
         };
+
+        // Current color theme
+        this.colorTheme = { ...colorTheme };
         
         // Screen effects
         this.screenEffects = {
@@ -595,6 +598,66 @@ export class Renderer {
      */
     getPatterns() {
         return { ...this.patterns };
+    }
+
+    /**
+     * Update the renderer color theme. Can accept either a color object
+     * or the combo/score/frame parameters used by the utils module.
+     */
+    updateColorTheme(comboOrColors, score, frameCount) {
+        if (typeof comboOrColors === 'object') {
+            this.colorTheme = { ...comboOrColors };
+        } else {
+            utilUpdateColorTheme(comboOrColors, score, frameCount);
+            this.colorTheme = { ...colorTheme };
+        }
+    }
+
+    /**
+     * Draw a simple trail from an array of points
+     */
+    drawTrail(trail, color = '#FFFFFF') {
+        if (!Array.isArray(trail) || trail.length === 0) return;
+        this.ctx.save();
+        this.ctx.strokeStyle = color;
+        this.ctx.beginPath();
+        this.ctx.moveTo(trail[0].x, trail[0].y);
+        for (let i = 1; i < trail.length; i++) {
+            this.ctx.lineTo(trail[i].x, trail[i].y);
+        }
+        this.ctx.stroke();
+        this.ctx.restore();
+    }
+
+    /**
+     * Draw a particle object
+     */
+    drawParticle(particle) {
+        if (!particle) return;
+        const { x = 0, y = 0, color = '#FFFFFF', size = 2, text, life = 1 } = particle;
+        this.ctx.save();
+        this.ctx.globalAlpha = life;
+        this.ctx.fillStyle = color;
+        if (text) {
+            this.ctx.font = `${size * 4 || 16}px Arial`;
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(text, x, y);
+        } else {
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, size, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
+        this.ctx.restore();
+    }
+
+    /**
+     * Show floating text using a particles array
+     */
+    showFloatingText(x, y, text, color, particles) {
+        if (Array.isArray(particles)) {
+            particles.push({ x, y, text, color });
+        }
     }
     
     /**

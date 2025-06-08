@@ -7,7 +7,7 @@ import GameState from './State.js';
 import { Particle } from './entities/Particle.js';
 import { PowerUp } from './entities/PowerUp.js';
 import { Ingredient } from './entities/Ingredient.js';
-import { Order } from './entities/Order.js';
+import { Order, orderTemplates } from './entities/Order.js';
 import AudioSystem from './systems/Audio.js';
 import Renderer from './systems/Renderer.js';
 import { InputSystem } from './systems/Input.js';
@@ -18,6 +18,7 @@ import { clamp, lerp, randomRange } from './utils/Math.js';
 import { ObjectPool, PoolManager } from './utils/ObjectPool.js';
 import PerformanceMonitor from './utils/PerformanceMonitor.js';
 import PerformanceUI from './utils/PerformanceUI.js';
+import { isLocalStorageAvailable } from './utils/Storage.js';
 
 /**
  * Main Game class that manages the game loop and coordinates all systems
@@ -46,7 +47,10 @@ export default class Game {
         // Initialize game state
         this.state = new GameState();
         this.state.core.lives = this.config.initialLives;
-        
+
+        // Add gameState property for compatibility
+        this.gameState = 'menu';
+      
         // Initialize systems
         this.audioSystem = new AudioSystem();
         this.renderer = new Renderer(this.canvas);
@@ -225,7 +229,6 @@ export default class Game {
      */
     handleInput(event) {
         if (this.state.gameState !== 'playing' || this.isPaused) return;
-        
         const { x, y } = event;
         
         // Check power-up collection
@@ -303,7 +306,6 @@ export default class Game {
             // Correct ingredient
             const points = this.calculatePoints(ingredient, correctOrder);
             this.state.addScore(points);
-            
             if (result === 'completed') {
                 // Order completed
                 this.completeOrder(correctOrder);
@@ -903,6 +905,60 @@ export default class Game {
         Object.entries(stats).forEach(([poolName, poolStats]) => {
             console.log(`  ${poolName}:`, poolStats);
         });
+    }
+    
+    /**
+     * Handle game errors
+     * @param {Error} error - The error that occurred
+     */
+    handleGameError(error) {
+        // Log error details
+        console.error('Game Error Details:', {
+            error: error.message,
+            stack: error.stack,
+            gameState: this.gameState,
+            frameCount: this.frameCount
+        });
+        
+        // Initialize error count if needed
+        if (this.errorCount === undefined) this.errorCount = 0;
+        this.errorCount++;
+        
+        if (this.errorCount < 3) {
+            // Attempt to recover
+            console.warn('Attempting to recover from error...');
+            this.animationId = requestAnimationFrame((time) => this.gameLoop(time));
+        } else {
+            // Too many errors, stop the game
+            this.gameState = 'error';
+            this.showErrorMessage('Game encountered an error. Please refresh to restart.');
+        }
+    }
+    
+    /**
+     * Show error message to user
+     * @param {string} message - Error message to display
+     */
+    showErrorMessage(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'game-error-message';
+        errorDiv.textContent = message;
+        errorDiv.style.cssText = `
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 0, 0, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 9999;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        `;
+        document.body.appendChild(errorDiv);
     }
     
     /**

@@ -72,6 +72,13 @@ export const soundEffects = {
         duration: 0.05,
         volume: 0.3
     },
+    ingredientDestroy: {
+        frequency: 150,
+        type: 'sawtooth',
+        duration: 0.15,
+        volume: 0.4,
+        sweep: true // Will add frequency sweep for explosion effect
+    },
     gameOver: {
         frequencies: [330, 311, 294, 277], // E, Eb, D, Db
         type: 'sawtooth',
@@ -171,11 +178,19 @@ export class AudioSystem {
      */
     setupUserInteractionHandlers() {
         const resumeAudio = () => {
-            if (this.audioContext && this.audioContext.state === 'suspended') {
-                this.audioContext.resume();
+            if (!this.audioContext) return;
+
+            if (this.audioContext.state === 'suspended') {
+                this.audioContext.resume().then(() => {
+                    if (this.settings.music > 0 && !this.backgroundMusic.playing) {
+                        this.startBackgroundMusic();
+                    }
+                });
+            } else if (this.settings.music > 0 && !this.backgroundMusic.playing) {
+                this.startBackgroundMusic();
             }
         };
-        
+
         document.addEventListener('click', resumeAudio, { once: true });
         document.addEventListener('touchstart', resumeAudio, { once: true });
     }
@@ -226,11 +241,18 @@ export class AudioSystem {
     playSound(soundConfig) {
         if (!this.audioContext || !this.enabled || this.settings.effects === 0) return;
         
-        const { frequency, type = 'sine', duration = 0.1, volume = 1, duck = false } = soundConfig;
+        const { frequency, type = 'sine', duration = 0.1, volume = 1, duck = false, sweep = false } = soundConfig;
         const result = this.createOscillator(frequency, type, duration, volume);
         
         if (result) {
             const { oscillator } = result;
+            
+            // Add frequency sweep for explosion effect
+            if (sweep) {
+                oscillator.frequency.setValueAtTime(frequency * 2, this.audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(frequency * 0.5, this.audioContext.currentTime + duration);
+            }
+            
             oscillator.start();
             oscillator.stop(this.audioContext.currentTime + duration);
             
@@ -306,6 +328,10 @@ export class AudioSystem {
         this.playSound(soundEffects.buttonClick);
     }
     
+    playDestroy() {
+        this.playSound(soundEffects.ingredientDestroy);
+    }
+    
     playGameOver() {
         if (!this.audioContext || !this.enabled || this.settings.effects === 0) return;
         
@@ -340,10 +366,32 @@ export class AudioSystem {
      * Start background music
      */
     startBackgroundMusic() {
-        if (!this.audioContext || !this.enabled || this.backgroundMusic.playing || this.settings.music === 0) {
+        if (
+            !this.audioContext ||
+            !this.enabled ||
+            this.backgroundMusic.playing ||
+            this.settings.music === 0 ||
+            this.audioContext.state === 'suspended'
+        ) {
             return;
         }
         
+        // Resume audio context if suspended (handles autoplay restrictions)
+        if (this.audioContext.state === 'suspended') {
+            this.audioContext.resume().then(() => {
+                this._startBackgroundMusicInternal();
+            }).catch(err => {
+                console.warn('Failed to resume audio context:', err);
+            });
+        } else {
+            this._startBackgroundMusicInternal();
+        }
+    }
+    
+    /**
+     * Internal method to actually start background music
+     */
+    _startBackgroundMusicInternal() {
         // Create master gain node for music
         if (!this.musicGainNode) {
             this.musicGainNode = this.audioContext.createGain();
@@ -415,36 +463,45 @@ export class AudioSystem {
             return;
         }
         
-        const noteIndex = Math.floor(Math.random() * musicNotes.melody.length);
-        const frequency = musicNotes.melody[noteIndex];
-        const musicVolume = this.settings.master * this.settings.music * 0.1;
+        // Check if audio context is suspended
+        if (this.audioContext.state === 'suspended') {
+            return;
+        }
         
-        const melodyOsc = this.audioContext.createOscillator();
-        const melodyGain = this.audioContext.createGain();
-        
-        melodyOsc.connect(melodyGain);
-        melodyGain.connect(this.musicGainNode);
-        
-        melodyOsc.type = 'sine';
-        melodyOsc.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
-        
-        melodyGain.gain.setValueAtTime(0, this.audioContext.currentTime);
-        melodyGain.gain.linearRampToValueAtTime(musicVolume, this.audioContext.currentTime + 0.1);
-        melodyGain.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 1.5);
-        
-        melodyOsc.start();
-        melodyOsc.stop(this.audioContext.currentTime + 2);
-        
-        // Cleanup after note finishes
-        melodyOsc.addEventListener('ended', () => {
-            const oscIndex = this.backgroundMusic.oscillators.indexOf(melodyOsc);
-            const gainIndex = this.backgroundMusic.gainNodes.indexOf(melodyGain);
-            if (oscIndex > -1) this.backgroundMusic.oscillators.splice(oscIndex, 1);
-            if (gainIndex > -1) this.backgroundMusic.gainNodes.splice(gainIndex, 1);
-        });
-        
-        this.backgroundMusic.oscillators.push(melodyOsc);
-        this.backgroundMusic.gainNodes.push(melodyGain);
+        try {
+            const noteIndex = Math.floor(Math.random() * musicNotes.melody.length);
+            const frequency = musicNotes.melody[noteIndex];
+            const musicVolume = this.settings.master * this.settings.music * 0.1;
+            
+            const melodyOsc = this.audioContext.createOscillator();
+            const melodyGain = this.audioContext.createGain();
+            
+            melodyOsc.connect(melodyGain);
+            melodyGain.connect(this.musicGainNode);
+            
+            melodyOsc.type = 'sine';
+            melodyOsc.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+            
+            melodyGain.gain.setValueAtTime(0, this.audioContext.currentTime);
+            melodyGain.gain.linearRampToValueAtTime(musicVolume, this.audioContext.currentTime + 0.1);
+            melodyGain.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 1.5);
+            
+            melodyOsc.start();
+            melodyOsc.stop(this.audioContext.currentTime + 2);
+            
+            // Cleanup after note finishes
+            melodyOsc.addEventListener('ended', () => {
+                const oscIndex = this.backgroundMusic.oscillators.indexOf(melodyOsc);
+                const gainIndex = this.backgroundMusic.gainNodes.indexOf(melodyGain);
+                if (oscIndex > -1) this.backgroundMusic.oscillators.splice(oscIndex, 1);
+                if (gainIndex > -1) this.backgroundMusic.gainNodes.splice(gainIndex, 1);
+            });
+            
+            this.backgroundMusic.oscillators.push(melodyOsc);
+            this.backgroundMusic.gainNodes.push(melodyGain);
+        } catch (err) {
+            console.warn('Failed to play melody note:', err);
+        }
     }
     
     /**

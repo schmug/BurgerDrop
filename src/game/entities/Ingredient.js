@@ -147,12 +147,13 @@ export class Ingredient {
      * @param {object} gameState - Game state for power-up checks
      * @param {number} deltaTime - Time elapsed since last frame
      */
-    update(frameCount, gameState, deltaTime = 1/60) {
+    // deltaTime is expected in milliseconds; default assumes ~60fps
+    update(frameCount, gameState, deltaTime = 16.67) {
         this.animationTime += deltaTime;
         
         // Apply speed boost power-up if available
         let speedMultiplier = 1;
-        if (gameState && gameState.isPowerUpActive && gameState.isPowerUpActive('speedBoost')) {
+        if (gameState && gameState.powerUps && gameState.powerUps.speedBoost && gameState.powerUps.speedBoost.active) {
             speedMultiplier = gameState.powerUps.speedBoost.multiplier;
         }
         this.speed = this.baseSpeed * speedMultiplier;
@@ -160,11 +161,11 @@ export class Ingredient {
         // Smooth falling motion with easing
         this.fallProgress += 0.02;
         const fallEase = easing.easeInQuad(Math.min(this.fallProgress, 1));
-        this.y += this.speed * (0.5 + fallEase * 0.5) * deltaTime * 60;
+        this.y += this.speed * (0.5 + fallEase * 0.5) * (deltaTime / 16.67); // Normalize to 60fps
         
         // Add subtle horizontal sway
         const swayAmount = Math.sin(frameCount * 0.05 + this.sway * Math.PI) * 0.5;
-        this.x += swayAmount * deltaTime * 60;
+        this.x += swayAmount * (deltaTime / 16.67); // Normalize to 60fps
         
         // Smooth rotation with easing
         this.rotation += this.rotationSpeed * (1 + fallEase * 0.5);
@@ -241,7 +242,13 @@ export class Ingredient {
         for (let i = 0; i < this.trail.length - 1; i++) {
             const point = this.trail[i];
             const nextPoint = this.trail[i + 1];
-            
+
+            // Skip if coordinates are not finite to avoid rendering errors
+            if (!Number.isFinite(point.x) || !Number.isFinite(point.y) ||
+                !Number.isFinite(nextPoint.x) || !Number.isFinite(nextPoint.y)) {
+                continue;
+            }
+
             // Draw line segment with gradient
             const gradient = ctx.createLinearGradient(
                 point.x, point.y, nextPoint.x, nextPoint.y

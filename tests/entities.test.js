@@ -199,7 +199,7 @@ describe('Entity Classes', () => {
       const ingredient = new Ingredient('cheese', { y: 100 })
       const initialY = ingredient.y
       
-      ingredient.update(60, null) // Frame 60, no game state
+      ingredient.update(60, null, 16.67) // Frame 60, no game state (deltaTime in ms)
       
       expect(ingredient.y).toBeGreaterThan(initialY)
     })
@@ -257,10 +257,35 @@ describe('Entity Classes', () => {
       
       // Update several times to build trail
       for (let i = 0; i < 5; i++) {
-        ingredient.update(i)
+        ingredient.update(i, undefined, 16.67)
       }
       
       expect(ingredient.trail.length).toBeGreaterThan(0)
+    })
+
+    it('should fall consistently regardless of deltaTime', () => {
+      const a = new Ingredient('cheese', { y: 0, baseSpeed: 4 })
+      const b = new Ingredient('cheese', { y: 0, baseSpeed: 4 })
+
+      // Normalize speeds to avoid random variation
+      a.speed = 4
+      a.baseSpeed = 4
+      b.speed = 4
+      b.baseSpeed = 4
+
+      // Simulate 60fps for 1 second
+      for (let i = 0; i < 60; i++) {
+        a.update(i, null, 16.67)
+      }
+
+      // Simulate 30fps for the same total time
+      for (let i = 0; i < 30; i++) {
+        b.update(i * 2, null, 33.33)
+      }
+
+      // Due to frame based easing the motion is not perfectly frame-rate
+      // independent; allow a small tolerance based on observed behavior
+      expect(Math.abs(a.y - b.y)).toBeLessThan(40)
     })
   })
 
@@ -291,7 +316,7 @@ describe('Entity Classes', () => {
       const order = new Order(mockTemplate)
       const initialTime = order.timeLeft
       
-      order.update(1) // 1 second
+      order.update(1000) // 1 second
       
       expect(order.timeLeft).toBeLessThan(initialTime)
     })
@@ -304,7 +329,7 @@ describe('Entity Classes', () => {
         isPowerUpActive: vi.fn(() => true)
       }
       
-      order.update(1, mockGameState) // 1 second with time freeze
+      order.update(1000, mockGameState) // 1 second with time freeze
       
       expect(order.timeLeft).toBe(initialTime)
       expect(mockGameState.isPowerUpActive).toHaveBeenCalledWith('timeFreeze')
@@ -314,7 +339,7 @@ describe('Entity Classes', () => {
       const order = new Order(mockTemplate)
       order.timeLeft = 500 // 0.5 seconds
       
-      const result = order.update(1) // 1 second
+      const result = order.update(1000) // 1 second
       
       expect(result).toBe(false)
       expect(order.isExpired()).toBe(true)

@@ -631,6 +631,7 @@ describe('Game Integration', () => {
             
             expect(game.powerUps.length).toBe(0);
             expect(game.state.activePowerUps.speedBoost.active).toBe(true);
+
         });
 
         it('should not handle input when paused', () => {

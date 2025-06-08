@@ -307,7 +307,7 @@ export class GameState {
         this._score = 0;
         this._lives = 3;
         this._combo = 1;
-        
+
         // Clear all entities
         Object.keys(this.entities).forEach(type => {
             this.clearEntities(type);

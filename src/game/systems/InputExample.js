@@ -14,6 +14,12 @@ export function setupGameInput(canvas, gameState) {
         preventScroll: true,
         debug: false
     });
+
+    // Expose the canvas on the game state for helper functions
+    // that require access to its dimensions and position.
+    // Tests expect this property to be set when the input
+    // system is initialized.
+    gameState.canvas = canvas;
     
     // Register click handler for game interaction
     inputSystem.onClick((x, y, type) => {
