@@ -54,8 +54,8 @@ export default {
                     showPerformanceUI: false
                 });
                 
-                // Don't start immediately - wait for user interaction
-                // game.start();
+                // Start the game immediately
+                game.start();
                 
                 // Setup UI event handlers
                 const audioToggle = document.getElementById('audioToggle');
