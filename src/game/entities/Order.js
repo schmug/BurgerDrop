@@ -67,7 +67,7 @@ export class Order {
         }
         
         if (shouldDecrementTime && !this.completed) {
-            this.timeLeft -= deltaTime * 1000; // Convert to milliseconds
+            this.timeLeft -= deltaTime; // deltaTime is already in milliseconds
         }
         
         if (this.timeLeft <= 0 && !this.completed) {
