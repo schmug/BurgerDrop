@@ -6246,13 +6246,20 @@ var Game = (function () {
                     '#00FF00'
                 );
             } else {
-                // Wrong ingredient - just destroy it
+                // Wrong ingredient
+                this.state.resetCombo();
+                this.renderer.startScreenShake(10, 15);
+                this.audioSystem.playError();
+                
+                // Destroy with visual effect
                 this.destroyIngredient(ingredient, index);
                 return;
             }
             
-            // Remove ingredient with destruction effect
-            this.destroyIngredient(ingredient, index);
+            // Correct ingredient - remove without destruction effect
+            ingredient.collected = true;
+            this.ingredients.splice(index, 1);
+            this.poolManager.release('ingredient', ingredient);
         }
         
         /**
@@ -6314,8 +6321,7 @@ var Game = (function () {
             // Add screen ripple effect at destruction point
             this.renderer.startRippleEffect(centerX, centerY, 40);
             
-            // Play destruction sound
-            this.audioSystem.playDestroy();
+            // Play destruction sound (error sound already played for wrong ingredients)
             
             // Remove ingredient
             ingredient.collected = true;
