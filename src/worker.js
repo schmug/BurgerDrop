@@ -6641,7 +6641,7 @@ var Game = (function () {
             }
             
             // Show game over screen
-            const gameOverElement = document.getElementById('gameOver');
+            const gameOverElement = document.getElementById('gameOverOverlay');
             if (gameOverElement) {
                 gameOverElement.style.display = 'block';
                 document.getElementById('finalScore').textContent = \`Final Score: \${this.state.score}\`;
@@ -6894,9 +6894,9 @@ var Game = (function () {
                 // Restart button handler  
                 if (restartButton) {
                     restartButton.addEventListener('click', () => {
-                        const gameOverScreen = document.getElementById('gameOverScreen');
-                        if (gameOverScreen) {
-                            gameOverScreen.style.display = 'none';
+                        const gameOverOverlay = document.getElementById('gameOverOverlay');
+                        if (gameOverOverlay) {
+                            gameOverOverlay.style.display = 'none';
                         }
                         game.start();
                     });
@@ -6920,9 +6920,9 @@ var Game = (function () {
                 // Menu button handler
                 if (menuButton) {
                     menuButton.addEventListener('click', () => {
-                        const gameOverScreen = document.getElementById('gameOverScreen');
-                        if (gameOverScreen) {
-                            gameOverScreen.style.display = 'none';
+                        const gameOverOverlay = document.getElementById('gameOverOverlay');
+                        if (gameOverOverlay) {
+                            gameOverOverlay.style.display = 'none';
                         }
                         const startScreen = document.getElementById('startScreen');
                         if (startScreen) {

@@ -770,7 +770,7 @@ export default class Game {
         }
         
         // Show game over screen
-        const gameOverElement = document.getElementById('gameOver');
+        const gameOverElement = document.getElementById('gameOverOverlay');
         if (gameOverElement) {
             gameOverElement.style.display = 'block';
             document.getElementById('finalScore').textContent = `Final Score: ${this.state.score}`;

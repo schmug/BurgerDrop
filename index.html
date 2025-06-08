@@ -320,7 +320,7 @@ body {
         <button class="play-again-btn" id="startButton">Start Game</button>
     </div>
 
-    <div class="game-over-overlay" id="gameOver">
+    <div class="game-over-overlay" id="gameOverOverlay">
         <div class="game-over-content">
             <h1 class="game-over-title">Game Over! 🍔</h1>
             <div class="final-score">Final Score: <span id="finalScore">0</span></div>
@@ -365,7 +365,7 @@ body {
                 
                 if (playAgainBtn) {
                     playAgainBtn.addEventListener('click', () => {
-                        document.getElementById('gameOver').style.display = 'none';
+                        document.getElementById('gameOverOverlay').style.display = 'none';
                         game.start();
                     });
                 }

@@ -93,9 +93,9 @@ export default {
                 // Restart button handler  
                 if (restartButton) {
                     restartButton.addEventListener('click', () => {
-                        const gameOverScreen = document.getElementById('gameOverScreen');
-                        if (gameOverScreen) {
-                            gameOverScreen.style.display = 'none';
+                        const gameOverOverlay = document.getElementById('gameOverOverlay');
+                        if (gameOverOverlay) {
+                            gameOverOverlay.style.display = 'none';
                         }
                         game.start();
                     });
@@ -119,9 +119,9 @@ export default {
                 // Menu button handler
                 if (menuButton) {
                     menuButton.addEventListener('click', () => {
-                        const gameOverScreen = document.getElementById('gameOverScreen');
-                        if (gameOverScreen) {
-                            gameOverScreen.style.display = 'none';
+                        const gameOverOverlay = document.getElementById('gameOverOverlay');
+                        if (gameOverOverlay) {
+                            gameOverOverlay.style.display = 'none';
                         }
                         const startScreen = document.getElementById('startScreen');
                         if (startScreen) {
