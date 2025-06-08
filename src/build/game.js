@@ -1695,7 +1695,7 @@ var Game = (function () {
             }
             
             if (shouldDecrementTime && !this.completed) {
-                this.timeLeft -= deltaTime * 1000; // Convert to milliseconds
+                this.timeLeft -= deltaTime; // deltaTime is already in milliseconds
             }
             
             if (this.timeLeft <= 0 && !this.completed) {
@@ -6021,6 +6021,16 @@ var Game = (function () {
                     possibleTypes.add(randomType);
                 }
             });
+            
+            // If no orders, spawn random ingredients to keep game active
+            if (possibleTypes.size === 0) {
+                const ingredientTypes = Ingredient.getAvailableTypes();
+                // Add 2-3 random ingredient types
+                for (let i = 0; i < Math.floor(Math.random() * 2) + 2; i++) {
+                    const randomType = ingredientTypes[Math.floor(Math.random() * ingredientTypes.length)];
+                    possibleTypes.add(randomType);
+                }
+            }
             
             if (possibleTypes.size > 0) {
                 const typesArray = Array.from(possibleTypes);

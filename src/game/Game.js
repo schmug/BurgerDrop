@@ -476,6 +476,16 @@ export default class Game {
             }
         });
         
+        // If no orders, spawn random ingredients to keep game active
+        if (possibleTypes.size === 0) {
+            const ingredientTypes = Ingredient.getAvailableTypes();
+            // Add 2-3 random ingredient types
+            for (let i = 0; i < Math.floor(Math.random() * 2) + 2; i++) {
+                const randomType = ingredientTypes[Math.floor(Math.random() * ingredientTypes.length)];
+                possibleTypes.add(randomType);
+            }
+        }
+        
         if (possibleTypes.size > 0) {
             const typesArray = Array.from(possibleTypes);
             const type = typesArray[Math.floor(Math.random() * typesArray.length)];
