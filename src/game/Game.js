@@ -563,7 +563,7 @@ export default class Game {
         for (let i = this.ingredients.length - 1; i >= 0; i--) {
             const ingredient = this.ingredients[i];
             // Pass deltaTime so ingredient physics stay consistent
-            ingredient.update(this.frameCount, this.state.activePowerUps, deltaTime);
+            ingredient.update(this.frameCount, this.state, deltaTime);
             
             // Remove if off screen
             if (ingredient.y > this.canvas.height + 50) {
@@ -585,7 +585,7 @@ export default class Game {
                 this.renderer.startScreenShake(20, 30);
                 
                 // Check game over
-                if (this.state.lives <= 0) {
+                if (this.state.core.lives <= 0) {
                     this.gameOver();
                 }
             }
@@ -703,7 +703,7 @@ export default class Game {
         // Update score
         const scoreElement = document.getElementById('score');
         if (scoreElement) {
-            scoreElement.textContent = `Score: ${this.state.score}`;
+            scoreElement.textContent = `Score: ${this.state.core.score}`;
             if (this.state.scoreChanged) {
                 scoreElement.classList.add('bounce');
                 setTimeout(() => scoreElement.classList.remove('bounce'), 400);
@@ -714,7 +714,7 @@ export default class Game {
         // Update combo
         const comboElement = document.getElementById('combo');
         if (comboElement) {
-            comboElement.textContent = `Combo: x${this.state.combo}`;
+            comboElement.textContent = `Combo: x${this.state.core.combo}`;
             if (this.state.comboChanged) {
                 comboElement.classList.add('pulse');
                 setTimeout(() => comboElement.classList.remove('pulse'), 300);
@@ -725,7 +725,7 @@ export default class Game {
         // Update lives
         const livesElement = document.getElementById('lives');
         if (livesElement) {
-            livesElement.textContent = '❤️'.repeat(this.state.lives);
+            livesElement.textContent = '❤️'.repeat(this.state.core.lives);
             if (this.state.livesChanged) {
                 livesElement.classList.add('shake');
                 setTimeout(() => livesElement.classList.remove('shake'), 500);
@@ -764,8 +764,8 @@ export default class Game {
         this.audioSystem.playGameOver();
         
         // Update high score
-        if (this.state.score > this.state.highScore) {
-            this.state.highScore = this.state.score;
+        if (this.state.core.score > this.state.core.highScore) {
+            this.state.core.highScore = this.state.core.score;
             this.saveHighScore();
         }
         
@@ -773,8 +773,8 @@ export default class Game {
         const gameOverElement = document.getElementById('gameOverOverlay');
         if (gameOverElement) {
             gameOverElement.style.display = 'block';
-            document.getElementById('finalScore').textContent = `Final Score: ${this.state.score}`;
-            document.getElementById('highScore').textContent = `High Score: ${this.state.highScore}`;
+            document.getElementById('finalScore').textContent = `Final Score: ${this.state.core.score}`;
+            document.getElementById('highScore').textContent = `High Score: ${this.state.core.highScore}`;
         }
     }
     
@@ -786,7 +786,7 @@ export default class Game {
             try {
                 const savedScore = localStorage.getItem('burgerDropHighScore');
                 if (savedScore) {
-                    this.state.highScore = parseInt(savedScore) || 0;
+                    this.state.core.highScore = parseInt(savedScore) || 0;
                 }
             } catch (e) {
                 console.warn('Could not load high score:', e);
@@ -800,7 +800,7 @@ export default class Game {
     saveHighScore() {
         if (isLocalStorageAvailable()) {
             try {
-                localStorage.setItem('burgerDropHighScore', this.state.highScore.toString());
+                localStorage.setItem('burgerDropHighScore', this.state.core.highScore.toString());
             } catch (e) {
                 console.warn('Could not save high score:', e);
             }

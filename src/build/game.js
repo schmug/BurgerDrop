@@ -1323,8 +1323,8 @@ var Game = (function () {
          * @param {object} gameState - Game state for power-up checks
          * @param {number} deltaTime - Time elapsed since last frame
          */
+        // deltaTime is expected in milliseconds; default assumes ~60fps
         update(frameCount, gameState, deltaTime = 16.67) {
-            // deltaTime is in ms
             this.animationTime += deltaTime;
             
             // Apply speed boost power-up if available
@@ -1682,7 +1682,7 @@ var Game = (function () {
 
         /**
          * Update order state
-         * @param {number} deltaTime - Time elapsed since last frame in seconds
+         * @param {number} deltaTime - Time elapsed since last frame in milliseconds
          * @param {object} gameState - Game state for power-up checks
          * @returns {boolean} True if order is still valid, false if expired
          */
@@ -6109,7 +6109,8 @@ var Game = (function () {
             // Update ingredients
             for (let i = this.ingredients.length - 1; i >= 0; i--) {
                 const ingredient = this.ingredients[i];
-                ingredient.update(this.frameCount, this.state.activePowerUps, deltaTime);
+                // Pass deltaTime so ingredient physics stay consistent
+                ingredient.update(this.frameCount, this.state, deltaTime);
                 
                 // Remove if off screen
                 if (ingredient.y > this.canvas.height + 50) {
@@ -6131,7 +6132,7 @@ var Game = (function () {
                     this.renderer.startScreenShake(20, 30);
                     
                     // Check game over
-                    if (this.state.lives <= 0) {
+                    if (this.state.core.lives <= 0) {
                         this.gameOver();
                     }
                 }
@@ -6249,7 +6250,7 @@ var Game = (function () {
             // Update score
             const scoreElement = document.getElementById('score');
             if (scoreElement) {
-                scoreElement.textContent = `Score: ${this.state.score}`;
+                scoreElement.textContent = `Score: ${this.state.core.score}`;
                 if (this.state.scoreChanged) {
                     scoreElement.classList.add('bounce');
                     setTimeout(() => scoreElement.classList.remove('bounce'), 400);
@@ -6260,7 +6261,7 @@ var Game = (function () {
             // Update combo
             const comboElement = document.getElementById('combo');
             if (comboElement) {
-                comboElement.textContent = `Combo: x${this.state.combo}`;
+                comboElement.textContent = `Combo: x${this.state.core.combo}`;
                 if (this.state.comboChanged) {
                     comboElement.classList.add('pulse');
                     setTimeout(() => comboElement.classList.remove('pulse'), 300);
@@ -6271,7 +6272,7 @@ var Game = (function () {
             // Update lives
             const livesElement = document.getElementById('lives');
             if (livesElement) {
-                livesElement.textContent = '❤️'.repeat(this.state.lives);
+                livesElement.textContent = '❤️'.repeat(this.state.core.lives);
                 if (this.state.livesChanged) {
                     livesElement.classList.add('shake');
                     setTimeout(() => livesElement.classList.remove('shake'), 500);
@@ -6310,8 +6311,8 @@ var Game = (function () {
             this.audioSystem.playGameOver();
             
             // Update high score
-            if (this.state.score > this.state.highScore) {
-                this.state.highScore = this.state.score;
+            if (this.state.core.score > this.state.core.highScore) {
+                this.state.core.highScore = this.state.core.score;
                 this.saveHighScore();
             }
             
@@ -6319,8 +6320,8 @@ var Game = (function () {
             const gameOverElement = document.getElementById('gameOverOverlay');
             if (gameOverElement) {
                 gameOverElement.style.display = 'block';
-                document.getElementById('finalScore').textContent = `Final Score: ${this.state.score}`;
-                document.getElementById('highScore').textContent = `High Score: ${this.state.highScore}`;
+                document.getElementById('finalScore').textContent = `Final Score: ${this.state.core.score}`;
+                document.getElementById('highScore').textContent = `High Score: ${this.state.core.highScore}`;
             }
         }
         
@@ -6332,7 +6333,7 @@ var Game = (function () {
                 try {
                     const savedScore = localStorage.getItem('burgerDropHighScore');
                     if (savedScore) {
-                        this.state.highScore = parseInt(savedScore) || 0;
+                        this.state.core.highScore = parseInt(savedScore) || 0;
                     }
                 } catch (e) {
                     console.warn('Could not load high score:', e);
@@ -6346,7 +6347,7 @@ var Game = (function () {
         saveHighScore() {
             if (isLocalStorageAvailable()) {
                 try {
-                    localStorage.setItem('burgerDropHighScore', this.state.highScore.toString());
+                    localStorage.setItem('burgerDropHighScore', this.state.core.highScore.toString());
                 } catch (e) {
                     console.warn('Could not save high score:', e);
                 }
