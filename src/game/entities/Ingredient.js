@@ -153,7 +153,7 @@ export class Ingredient {
         
         // Apply speed boost power-up if available
         let speedMultiplier = 1;
-        if (gameState && gameState.isPowerUpActive && gameState.isPowerUpActive('speedBoost')) {
+        if (gameState && gameState.powerUps && gameState.powerUps.speedBoost && gameState.powerUps.speedBoost.active) {
             speedMultiplier = gameState.powerUps.speedBoost.multiplier;
         }
         this.speed = this.baseSpeed * speedMultiplier;

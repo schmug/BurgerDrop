@@ -48,6 +48,9 @@ export default class Game {
         this.state = new GameState();
         this.state.core.lives = this.config.initialLives;
         
+        // Add gameState property for compatibility
+        this.gameState = 'menu';
+        
         // Initialize systems
         this.audioSystem = new AudioSystem();
         this.renderer = new Renderer(this.canvas);
@@ -373,7 +376,7 @@ export default class Game {
         const timeBonus = Math.floor(order.timeLeft / 1000);
         
         // Combo multiplier
-        const comboMultiplier = this.state.combo;
+        const comboMultiplier = this.state.core.combo;
         
         // Power-up multiplier
         const powerUpMultiplier = this.state.activePowerUps.scoreMultiplier.active ? 
@@ -497,7 +500,7 @@ export default class Game {
             });
             
             // Apply current speed with difficulty scaling
-            const difficultyMultiplier = 1 + (this.state.score * this.config.difficultyIncreaseRate);
+            const difficultyMultiplier = 1 + (this.state.core.score * this.config.difficultyIncreaseRate);
             ingredient.speed *= difficultyMultiplier;
             ingredient.baseSpeed *= difficultyMultiplier;
             
@@ -533,7 +536,7 @@ export default class Game {
      * @param {number} deltaTime - Time since last update in milliseconds
      */
     update(deltaTime) {
-        if (this.state.gameState !== 'playing' || this.isPaused) return;
+        if (this.gameState !== 'playing' || this.isPaused) return;
         
         this.frameCount++;
         
@@ -542,7 +545,7 @@ export default class Game {
         
         // Update color theme
         if (this.renderer.updateColorTheme) {
-            this.renderer.updateColorTheme(this.state.combo, this.state.score, this.frameCount);
+            this.renderer.updateColorTheme(this.state.core.combo, this.state.core.score, this.frameCount);
         }
         
         // Spawn entities
@@ -575,7 +578,7 @@ export default class Game {
         // Update orders
         for (let i = this.orders.length - 1; i >= 0; i--) {
             const order = this.orders[i];
-            if (!order.update(deltaTime, this.state.activePowerUps)) {
+            if (!order.update(deltaTime, this.state.powerUps)) {
                 // Order expired
                 this.orders.splice(i, 1);
                 this.state.loseLife();
@@ -738,7 +741,7 @@ export default class Game {
         if (powerUpStatus) {
             powerUpStatus.innerHTML = '';
             
-            for (const [type, powerUp] of Object.entries(this.state.activePowerUps)) {
+            for (const [type, powerUp] of Object.entries(this.state.powerUps)) {
                 if (powerUp.active) {
                     const indicator = document.createElement('div');
                     indicator.className = `power-up-indicator ${type.toLowerCase().replace(/([A-Z])/g, '-$1').toLowerCase()}`;
@@ -760,7 +763,8 @@ export default class Game {
      * Handle game over
      */
     gameOver() {
-        this.state.gameState = 'gameOver';
+        this.gameState = 'gameOver';
+        this.state.core.running = false;
         this.audioSystem.playGameOver();
         
         // Update high score
@@ -842,7 +846,8 @@ export default class Game {
         this.lastPowerUpSpawn = 0;
 
         // Set game state
-        this.state.gameState = 'playing';
+        this.gameState = 'playing';
+        this.state.core.running = true;
         
         // Start game loop
         this.lastTime = 0;
@@ -859,7 +864,8 @@ export default class Game {
         }
         
         this.audioSystem.stopBackgroundMusic();
-        this.state.gameState = 'stopped';
+        this.gameState = 'stopped';
+        this.state.core.running = false;
     }
     
     /**
