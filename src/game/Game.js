@@ -18,6 +18,7 @@ import { clamp, lerp, randomRange } from './utils/Math.js';
 import { ObjectPool, PoolManager } from './utils/ObjectPool.js';
 import PerformanceMonitor from './utils/PerformanceMonitor.js';
 import PerformanceUI from './utils/PerformanceUI.js';
+import { isLocalStorageAvailable } from './utils/Storage.js';
 
 /**
  * Main Game class that manages the game loop and coordinates all systems
@@ -770,13 +771,15 @@ export default class Game {
      * Load high score from localStorage
      */
     loadHighScore() {
-        try {
-            const savedScore = localStorage.getItem('burgerDropHighScore');
-            if (savedScore) {
-                this.state.highScore = parseInt(savedScore) || 0;
+        if (isLocalStorageAvailable()) {
+            try {
+                const savedScore = localStorage.getItem('burgerDropHighScore');
+                if (savedScore) {
+                    this.state.highScore = parseInt(savedScore) || 0;
+                }
+            } catch (e) {
+                console.warn('Could not load high score:', e);
             }
-        } catch (e) {
-            console.warn('Could not load high score:', e);
         }
     }
     
@@ -784,10 +787,12 @@ export default class Game {
      * Save high score to localStorage
      */
     saveHighScore() {
-        try {
-            localStorage.setItem('burgerDropHighScore', this.state.highScore.toString());
-        } catch (e) {
-            console.warn('Could not save high score:', e);
+        if (isLocalStorageAvailable()) {
+            try {
+                localStorage.setItem('burgerDropHighScore', this.state.highScore.toString());
+            } catch (e) {
+                console.warn('Could not save high score:', e);
+            }
         }
     }
     
