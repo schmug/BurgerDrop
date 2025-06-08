@@ -5767,7 +5767,7 @@ var Game = (function () {
          * Setup input event handlers
          */
         setupInputHandlers() {
-            this.unregisterClick = this.inputSystem.onClick((event) => this.handleInput(event));
+            this.unregisterClick = this.inputSystem.onClick((x, y, type) => this.handleInput({ x, y, type }));
         }
         
         /**
@@ -5775,7 +5775,7 @@ var Game = (function () {
          * @param {Object} event - Input event data
          */
         handleInput(event) {
-            if (this.state.gameState !== 'playing' || this.isPaused) return;
+            if (this.gameState !== 'playing' || this.isPaused) return;
             
             const { x, y } = event;
             
