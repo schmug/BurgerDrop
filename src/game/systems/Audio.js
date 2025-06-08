@@ -72,6 +72,13 @@ export const soundEffects = {
         duration: 0.05,
         volume: 0.3
     },
+    ingredientDestroy: {
+        frequency: 150,
+        type: 'sawtooth',
+        duration: 0.15,
+        volume: 0.4,
+        sweep: true // Will add frequency sweep for explosion effect
+    },
     gameOver: {
         frequencies: [330, 311, 294, 277], // E, Eb, D, Db
         type: 'sawtooth',
@@ -234,11 +241,18 @@ export class AudioSystem {
     playSound(soundConfig) {
         if (!this.audioContext || !this.enabled || this.settings.effects === 0) return;
         
-        const { frequency, type = 'sine', duration = 0.1, volume = 1, duck = false } = soundConfig;
+        const { frequency, type = 'sine', duration = 0.1, volume = 1, duck = false, sweep = false } = soundConfig;
         const result = this.createOscillator(frequency, type, duration, volume);
         
         if (result) {
             const { oscillator } = result;
+            
+            // Add frequency sweep for explosion effect
+            if (sweep) {
+                oscillator.frequency.setValueAtTime(frequency * 2, this.audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(frequency * 0.5, this.audioContext.currentTime + duration);
+            }
+            
             oscillator.start();
             oscillator.stop(this.audioContext.currentTime + duration);
             
@@ -312,6 +326,10 @@ export class AudioSystem {
     
     playButtonClick() {
         this.playSound(soundEffects.buttonClick);
+    }
+    
+    playDestroy() {
+        this.playSound(soundEffects.ingredientDestroy);
     }
     
     playGameOver() {
