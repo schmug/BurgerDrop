@@ -2451,6 +2451,13 @@ var Game = (function () {
             duration: 0.05,
             volume: 0.3
         },
+        ingredientDestroy: {
+            frequency: 150,
+            type: 'sawtooth',
+            duration: 0.15,
+            volume: 0.4,
+            sweep: true // Will add frequency sweep for explosion effect
+        },
         gameOver: {
             frequencies: [330, 311, 294, 277], // E, Eb, D, Db
             type: 'sawtooth',
@@ -2613,11 +2620,18 @@ var Game = (function () {
         playSound(soundConfig) {
             if (!this.audioContext || !this.enabled || this.settings.effects === 0) return;
             
-            const { frequency, type = 'sine', duration = 0.1, volume = 1, duck = false } = soundConfig;
+            const { frequency, type = 'sine', duration = 0.1, volume = 1, duck = false, sweep = false } = soundConfig;
             const result = this.createOscillator(frequency, type, duration, volume);
             
             if (result) {
                 const { oscillator } = result;
+                
+                // Add frequency sweep for explosion effect
+                if (sweep) {
+                    oscillator.frequency.setValueAtTime(frequency * 2, this.audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(frequency * 0.5, this.audioContext.currentTime + duration);
+                }
+                
                 oscillator.start();
                 oscillator.stop(this.audioContext.currentTime + duration);
                 
@@ -2691,6 +2705,10 @@ var Game = (function () {
         
         playButtonClick() {
             this.playSound(soundEffects.buttonClick);
+        }
+        
+        playDestroy() {
+            this.playSound(soundEffects.ingredientDestroy);
         }
         
         playGameOver() {
@@ -6228,24 +6246,76 @@ var Game = (function () {
                     '#00FF00'
                 );
             } else {
-                // Wrong ingredient
-                this.state.resetCombo();
-                this.renderer.startScreenShake(10, 15);
-                this.audioSystem.playError();
-                
-                // Create error particles
-                for (let i = 0; i < 3; i++) {
-                    const particle = this.poolManager.get('particle',
-                        ingredient.x + ingredient.data.size / 2,
-                        ingredient.y + ingredient.data.size / 2,
-                        '#FF0000',
-                        '✗',
-                        'default',
-                        {}
-                    );
-                    this.particles.push(particle);
-                }
+                // Wrong ingredient - just destroy it
+                this.destroyIngredient(ingredient, index);
+                return;
             }
+            
+            // Remove ingredient with destruction effect
+            this.destroyIngredient(ingredient, index);
+        }
+        
+        /**
+         * Destroy an ingredient with visual effects
+         * @param {Ingredient} ingredient - The ingredient to destroy
+         * @param {number} index - Index in the ingredients array
+         */
+        destroyIngredient(ingredient, index) {
+            const centerX = ingredient.x + ingredient.data.size / 2;
+            const centerY = ingredient.y + ingredient.data.size / 2;
+            
+            // Create explosion particles
+            const particleCount = 8; // Balanced for performance
+            const angleStep = (Math.PI * 2) / particleCount;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const angle = i * angleStep;
+                const speed = 3 + Math.random() * 3;
+                const particle = this.poolManager.get('particle',
+                    centerX,
+                    centerY,
+                    ingredient.data.color || ingredient.getColor(),
+                    '',
+                    'circle',
+                    {
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        size: 3 + Math.random() * 3,
+                        gravity: 0.2,
+                        decay: 0.02,
+                        bounce: 0.5
+                    }
+                );
+                this.particles.push(particle);
+            }
+            
+            // Create emoji fragments (just a few for performance)
+            for (let i = 0; i < 3; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 2 + Math.random() * 4;
+                const fragment = this.poolManager.get('particle',
+                    centerX + (Math.random() - 0.5) * 10,
+                    centerY + (Math.random() - 0.5) * 10,
+                    ingredient.data.color || '#FFD700',
+                    ingredient.data.emoji,
+                    'default',
+                    {
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed - 2,
+                        size: ingredient.data.size * 0.3,
+                        gravity: 0.3,
+                        decay: 0.025,
+                        rotationSpeed: (Math.random() - 0.5) * 0.4
+                    }
+                );
+                this.particles.push(fragment);
+            }
+            
+            // Add screen ripple effect at destruction point
+            this.renderer.startRippleEffect(centerX, centerY, 40);
+            
+            // Play destruction sound
+            this.audioSystem.playDestroy();
             
             // Remove ingredient
             ingredient.collected = true;
