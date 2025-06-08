@@ -562,7 +562,7 @@ export default class Game {
         // Update ingredients
         for (let i = this.ingredients.length - 1; i >= 0; i--) {
             const ingredient = this.ingredients[i];
-            ingredient.update(this.frameCount, this.state.activePowerUps);
+            ingredient.update(this.frameCount, this.state, this.deltaTime);
             
             // Remove if off screen
             if (ingredient.y > this.canvas.height + 50) {
@@ -584,7 +584,7 @@ export default class Game {
                 this.renderer.startScreenShake(20, 30);
                 
                 // Check game over
-                if (this.state.lives <= 0) {
+                if (this.state.core.lives <= 0) {
                     this.gameOver();
                 }
             }
@@ -702,7 +702,7 @@ export default class Game {
         // Update score
         const scoreElement = document.getElementById('score');
         if (scoreElement) {
-            scoreElement.textContent = `Score: ${this.state.score}`;
+            scoreElement.textContent = `Score: ${this.state.core.score}`;
             if (this.state.scoreChanged) {
                 scoreElement.classList.add('bounce');
                 setTimeout(() => scoreElement.classList.remove('bounce'), 400);
@@ -713,7 +713,7 @@ export default class Game {
         // Update combo
         const comboElement = document.getElementById('combo');
         if (comboElement) {
-            comboElement.textContent = `Combo: x${this.state.combo}`;
+            comboElement.textContent = `Combo: x${this.state.core.combo}`;
             if (this.state.comboChanged) {
                 comboElement.classList.add('pulse');
                 setTimeout(() => comboElement.classList.remove('pulse'), 300);
@@ -724,7 +724,7 @@ export default class Game {
         // Update lives
         const livesElement = document.getElementById('lives');
         if (livesElement) {
-            livesElement.textContent = '❤️'.repeat(this.state.lives);
+            livesElement.textContent = '❤️'.repeat(this.state.core.lives);
             if (this.state.livesChanged) {
                 livesElement.classList.add('shake');
                 setTimeout(() => livesElement.classList.remove('shake'), 500);
