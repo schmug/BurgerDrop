@@ -2,6 +2,16 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 let fetchHandler
 
+// Mock the Template module to avoid HTML import issues
+vi.mock('../src/game/templates/Template.js', () => ({
+  getGameHTML: vi.fn(() => '<html><body>Game HTML</body></html>')
+}))
+
+// Mock the Game module to avoid complex imports
+vi.mock('../src/game/Game.js', () => ({
+  default: class MockGame {}
+}))
+
 beforeEach(() => {
   vi.clearAllMocks()
   vi.resetModules()

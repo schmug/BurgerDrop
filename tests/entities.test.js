@@ -316,7 +316,7 @@ describe('Entity Classes', () => {
       const order = new Order(mockTemplate)
       const initialTime = order.timeLeft
       
-      order.update(1) // 1 second
+      order.update(1000) // 1 second
       
       expect(order.timeLeft).toBeLessThan(initialTime)
     })
@@ -329,7 +329,7 @@ describe('Entity Classes', () => {
         isPowerUpActive: vi.fn(() => true)
       }
       
-      order.update(1, mockGameState) // 1 second with time freeze
+      order.update(1000, mockGameState) // 1 second with time freeze
       
       expect(order.timeLeft).toBe(initialTime)
       expect(mockGameState.isPowerUpActive).toHaveBeenCalledWith('timeFreeze')
@@ -339,7 +339,7 @@ describe('Entity Classes', () => {
       const order = new Order(mockTemplate)
       order.timeLeft = 500 // 0.5 seconds
       
-      const result = order.update(1) // 1 second
+      const result = order.update(1000) // 1 second
       
       expect(result).toBe(false)
       expect(order.isExpired()).toBe(true)

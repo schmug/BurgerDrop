@@ -34,14 +34,6 @@ export const powerUpTypes = {
 
 export class PowerUp {
     /**
-     * Get all available power-up types
-     * @returns {object} Power-up type configurations
-     */
-    static getPowerUpTypes() {
-        return powerUpTypes;
-    }
-    
-    /**
      * Create a new power-up
      * @param {string} type - Power-up type ('speedBoost', 'timeFreeze', 'scoreMultiplier')
      * @param {object} options - Additional options

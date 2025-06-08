@@ -144,25 +144,28 @@ export class PerformanceUI {
         title.textContent = '🎯 Performance';
         section.appendChild(title);
         
-        // Create metric elements
-        section.appendChild(this.createLabeledValue('FPS', 'perf-fps'));
-        section.appendChild(this.createLabeledValue('Avg', 'perf-avg-fps'));
-        section.appendChild(this.createLabeledValue('Min', 'perf-min-fps'));
-        
+        // Create metric elements with direct references
+        const fpsDiv = this.createLabeledValue('FPS', 'perf-fps');
+        const avgDiv = this.createLabeledValue('Avg', 'perf-avg-fps');
+        const minDiv = this.createLabeledValue('Min', 'perf-min-fps');
         const frameDiv = this.createLabeledValue('Frame', 'perf-frame-time');
         frameDiv.appendChild(document.createTextNode('ms'));
-        section.appendChild(frameDiv);
+        const dropsDiv = this.createLabeledValue('Drops', 'perf-drops');
         
-        section.appendChild(this.createLabeledValue('Drops', 'perf-drops'));
+        section.appendChild(fpsDiv);
+        section.appendChild(avgDiv);
+        section.appendChild(minDiv);
+        section.appendChild(frameDiv);
+        section.appendChild(dropsDiv);
         
         this.container.appendChild(section);
         
-        // Store element references
-        this.elements.fps = document.getElementById('perf-fps');
-        this.elements.avgFps = document.getElementById('perf-avg-fps');
-        this.elements.minFps = document.getElementById('perf-min-fps');
-        this.elements.frameTime = document.getElementById('perf-frame-time');
-        this.elements.drops = document.getElementById('perf-drops');
+        // Store element references directly
+        this.elements.fps = fpsDiv.querySelector('span');
+        this.elements.avgFps = avgDiv.querySelector('span');
+        this.elements.minFps = minDiv.querySelector('span');
+        this.elements.frameTime = frameDiv.querySelector('span');
+        this.elements.drops = dropsDiv.querySelector('span');
     }
     
     /**
@@ -179,18 +182,24 @@ export class PerformanceUI {
         title.textContent = '⚙️ Quality';
         section.appendChild(title);
         
-        // Create metric elements
-        section.appendChild(this.createLabeledValue('Level', 'perf-quality-level'));
-        section.appendChild(this.createLabeledValue('Particles', 'perf-max-particles'));
-        section.appendChild(this.createLabeledValue('Shadows', 'perf-shadows'));
-        section.appendChild(this.createLabeledValue('Effects', 'perf-effects'));
+        // Create metric elements with direct references
+        const levelDiv = this.createLabeledValue('Level', 'perf-quality-level');
+        const particlesDiv = this.createLabeledValue('Particles', 'perf-max-particles');
+        const shadowsDiv = this.createLabeledValue('Shadows', 'perf-shadows');
+        const effectsDiv = this.createLabeledValue('Effects', 'perf-effects');
+        
+        section.appendChild(levelDiv);
+        section.appendChild(particlesDiv);
+        section.appendChild(shadowsDiv);
+        section.appendChild(effectsDiv);
         
         this.container.appendChild(section);
         
-        this.elements.qualityLevel = document.getElementById('perf-quality-level');
-        this.elements.maxParticles = document.getElementById('perf-max-particles');
-        this.elements.shadows = document.getElementById('perf-shadows');
-        this.elements.effects = document.getElementById('perf-effects');
+        // Store element references directly
+        this.elements.qualityLevel = levelDiv.querySelector('span');
+        this.elements.maxParticles = particlesDiv.querySelector('span');
+        this.elements.shadows = shadowsDiv.querySelector('span');
+        this.elements.effects = effectsDiv.querySelector('span');
     }
     
     /**
@@ -213,7 +222,9 @@ export class PerformanceUI {
         section.appendChild(content);
         
         this.container.appendChild(section);
-        this.elements.poolsContent = document.getElementById('perf-pools-content');
+        
+        // Store element reference directly
+        this.elements.poolsContent = content;
     }
     
     /**
@@ -230,18 +241,24 @@ export class PerformanceUI {
         title.textContent = '📊 Details';
         section.appendChild(title);
         
-        // Create metric elements
-        section.appendChild(this.createLabeledValue('Memory', 'perf-memory'));
-        section.appendChild(this.createLabeledValue('Entities', 'perf-entities'));
-        section.appendChild(this.createLabeledValue('Draw Calls', 'perf-draw-calls'));
-        section.appendChild(this.createLabeledValue('Performance', 'perf-health'));
+        // Create metric elements with direct references
+        const memoryDiv = this.createLabeledValue('Memory', 'perf-memory');
+        const entitiesDiv = this.createLabeledValue('Entities', 'perf-entities');
+        const drawCallsDiv = this.createLabeledValue('Draw Calls', 'perf-draw-calls');
+        const healthDiv = this.createLabeledValue('Performance', 'perf-health');
+        
+        section.appendChild(memoryDiv);
+        section.appendChild(entitiesDiv);
+        section.appendChild(drawCallsDiv);
+        section.appendChild(healthDiv);
         
         this.container.appendChild(section);
         
-        this.elements.memory = document.getElementById('perf-memory');
-        this.elements.entities = document.getElementById('perf-entities');
-        this.elements.drawCalls = document.getElementById('perf-draw-calls');
-        this.elements.health = document.getElementById('perf-health');
+        // Store element references directly
+        this.elements.memory = memoryDiv.querySelector('span');
+        this.elements.entities = entitiesDiv.querySelector('span');
+        this.elements.drawCalls = drawCallsDiv.querySelector('span');
+        this.elements.health = healthDiv.querySelector('span');
     }
     
     /**
@@ -268,8 +285,10 @@ export class PerformanceUI {
         section.appendChild(canvas);
         
         this.container.appendChild(section);
-        this.elements.graph = document.getElementById('perf-graph');
-        this.graphCtx = this.elements.graph.getContext('2d');
+        
+        // Store element reference directly
+        this.elements.graph = canvas;
+        this.graphCtx = canvas.getContext('2d');
     }
     
     /**

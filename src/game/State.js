@@ -3,7 +3,7 @@
  * 
  * Centralized state management system replacing global variables.
  * Provides event-driven architecture with validation and debugging capabilities.
-*/
+ */
 
 import { isLocalStorageAvailable } from './utils/Storage.js';
 
@@ -123,33 +123,6 @@ export class GameState {
     updateFrameCount(deltaTime) {
         this.core.frameCount++;
         this.core.lastTime = performance.now();
-    }
-    
-    /**
-     * Main update method - updates all state-related systems
-     * @param {number} deltaTime - Time elapsed since last frame
-     */
-    update(deltaTime) {
-        // Update power-ups
-        this.updatePowerUps(deltaTime);
-        
-        // Update frame count
-        this.updateFrameCount(deltaTime);
-    }
-
-    /**
-     * Update overall game state each frame
-     * @param {number} deltaTime - Time elapsed since last update in seconds
-     */
-    update(deltaTime) {
-        // Advance frame counter and timestamp
-        this.updateFrameCount(deltaTime);
-
-        // Update active power-up timers
-        this.updatePowerUps(deltaTime);
-
-        // Recalculate level based on score
-        this.updateLevel();
     }
 
     /**
@@ -322,23 +295,19 @@ export class GameState {
      * High score persistence
      */
     loadHighScore() {
-        if (isLocalStorageAvailable()) {
-            try {
-                return parseInt(localStorage.getItem('burgerDropHighScore') || '0');
-            } catch (e) {
-                console.warn('Could not load high score from localStorage');
-            }
+        try {
+            return parseInt(localStorage.getItem('burgerDropHighScore') || '0');
+        } catch (e) {
+            console.warn('Could not load high score from localStorage');
+            return 0;
         }
-        return 0;
     }
 
     saveHighScore() {
-        if (isLocalStorageAvailable()) {
-            try {
-                localStorage.setItem('burgerDropHighScore', this.core.highScore.toString());
-            } catch (e) {
-                console.warn('Could not save high score to localStorage');
-            }
+        try {
+            localStorage.setItem('burgerDropHighScore', this.core.highScore.toString());
+        } catch (e) {
+            console.warn('Could not save high score to localStorage');
         }
     }
 

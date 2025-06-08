@@ -404,5 +404,3 @@ export class Order {
                template.time > 0);
     }
 }
-
-export default Order;

@@ -46,9 +46,11 @@ vi.mock('../src/game/systems/Audio.js', () => ({
         playPowerUpActivate() {}
         playOrderComplete() {}
         playOrderExpire() {}
+        playOrderExpired() {}
         playWrong() {}
         playError() {}
         playGameOver() {}
+        playDestroy() {}
         startBackgroundMusic() {}
         stopBackgroundMusic() {}
         pauseBackgroundMusic() {}
@@ -61,57 +63,77 @@ vi.mock('../src/game/systems/Audio.js', () => ({
 vi.mock('../src/game/State.js', () => {
     class MockGameState {
         constructor() {
+            // Core game state (matching real GameState structure)
+            this.core = {
+                running: false,
+                score: 0,
+                lives: 3,
+                combo: 1,
+                level: 1,
+                frameCount: 0,
+                lastTime: 0,
+                highScore: 0
+            };
+            
+            // Power-up state
+            this.powerUps = {
+                speedBoost: { active: false, timeLeft: 0, multiplier: 0.5 },
+                timeFreeze: { active: false, timeLeft: 0 },
+                scoreMultiplier: { active: false, timeLeft: 0, multiplier: 2 }
+            };
+            
+            // Legacy compatibility properties for tests that expect them
             this.gameState = 'menu';
             this.score = 0;
             this.lives = 3;
             this.combo = 1;
             this.highScore = 0;
-            this.activePowerUps = {
-                speedBoost: { active: false, timeLeft: 0, multiplier: 0.5 },
-                timeFreeze: { active: false, timeLeft: 0 },
-                scoreMultiplier: { active: false, timeLeft: 0, multiplier: 2 }
-            };
-            this.core = {
-                lives: 3
-            };
         }
         
         startGame() {
+            this.core.running = true;
             this.gameState = 'playing';
+            this.core.score = 0;
             this.score = 0;
+            this.core.lives = 3;
             this.lives = 3;
+            this.core.combo = 1;
             this.combo = 1;
         }
         
-        addScore(points) {
-            this.score += points;
+        updateScore(points) {
+            this.core.score += points;
+            this.score += points; // Legacy compatibility
         }
         
         incrementCombo() {
-            this.combo++;
+            this.core.combo++;
+            this.combo++; // Legacy compatibility
         }
         
         resetCombo() {
-            this.combo = 1;
+            this.core.combo = 1;
+            this.combo = 1; // Legacy compatibility
         }
         
         loseLife() {
-            this.lives--;
-            if (this.lives <= 0) {
+            this.core.lives--;
+            this.lives--; // Legacy compatibility
+            if (this.core.lives <= 0) {
                 this.gameState = 'gameOver';
             }
         }
         
         activatePowerUp(type, duration = 10000) {
-            if (this.activePowerUps[type]) {
-                this.activePowerUps[type].active = true;
-                this.activePowerUps[type].timeLeft = duration;
+            if (this.powerUps[type]) {
+                this.powerUps[type].active = true;
+                this.powerUps[type].timeLeft = duration;
             }
         }
         
         update(deltaTime) {
             // Update power-ups
-            Object.values(this.activePowerUps).forEach(powerUp => {
+            Object.values(this.powerUps).forEach(powerUp => {
                 if (powerUp.active) {
                     powerUp.timeLeft -= deltaTime * 1000;
                     if (powerUp.timeLeft <= 0) {
@@ -155,20 +177,13 @@ vi.mock('../src/game/utils/Colors.js', () => ({
 
 // Mock PowerUp static method
 PowerUp.getPowerUpTypes = vi.fn(() => ({
-    speedBoost: { emoji: '⚡', name: 'Slow Motion', duration: 10000 },
-    scoreMultiplier: { emoji: '✨', name: 'Double Points', duration: 15000 },
-    timeFreeze: { emoji: '⏱️', name: 'Time Freeze', duration: 8000 }
+    speedBoost: { emoji: '⚡', name: 'Slow Motion', duration: 10000, color: '#FFD700' },
+    scoreMultiplier: { emoji: '✨', name: 'Double Points', duration: 15000, color: '#FF69B4' },
+    timeFreeze: { emoji: '⏱️', name: 'Time Freeze', duration: 8000, color: '#00BFFF' }
 }));
 
 // Mock Ingredient static method
-Ingredient.getIngredientTypes = vi.fn(() => ({
-    bun_bottom: { name: 'Bottom Bun', emoji: '🍞' },
-    bun_top: { name: 'Top Bun', emoji: '🍞' },
-    patty: { name: 'Patty', emoji: '🍖' },
-    cheese: { name: 'Cheese', emoji: '🧀' },
-    lettuce: { name: 'Lettuce', emoji: '🥬' },
-    tomato: { name: 'Tomato', emoji: '🍅' }
-}));
+Ingredient.getAvailableTypes = vi.fn(() => ['bun_bottom', 'bun_top', 'patty', 'cheese', 'lettuce', 'tomato']);
 
 // Mock requestAnimationFrame
 vi.stubGlobal('requestAnimationFrame', (cb) => setTimeout(cb, 16));
@@ -339,7 +354,7 @@ describe('Game Integration', () => {
             game.start();
             game.stop();
             
-            expect(game.state.gameState).toBe('stopped');
+            expect(game.gameState).toBe('stopped');
             expect(game.animationId).toBeNull();
         });
 
@@ -494,11 +509,11 @@ describe('Game Integration', () => {
             powerUp.y = 100;
             game.powerUps.push(powerUp);
             
-            expect(game.state.activePowerUps.speedBoost.active).toBe(false);
+            expect(game.state.powerUps.speedBoost.active).toBe(false);
             
             game.collectPowerUp(powerUp, 0);
             
-            expect(game.state.activePowerUps.speedBoost.active).toBe(true);
+            expect(game.state.powerUps.speedBoost.active).toBe(true);
             expect(game.powerUps.length).toBe(0);
         });
 
@@ -524,6 +539,7 @@ describe('Game Integration', () => {
 
         it('should handle game over when lives reach zero', () => {
             game.state.lives = 1;
+            game.state.core.lives = 1;
             
             // Add an order and let it expire
             const order = new Order({
@@ -537,17 +553,19 @@ describe('Game Integration', () => {
             order.timeLeft = -1;
             game.update(16);
             
-            expect(game.state.gameState).toBe('gameOver');
+            expect(game.gameState).toBe('gameOver');
             expect(document.getElementById('gameOverOverlay').style.display).toBe('block');
         });
 
         it('should update high score if current score is higher', () => {
             game.state.score = 1000;
+            game.state.core.score = 1000;
             game.state.highScore = 500;
+            game.state.core.highScore = 500;
             
             game.gameOver();
             
-            expect(game.state.highScore).toBe(1000);
+            expect(game.state.core.highScore).toBe(1000);
         });
     });
 
@@ -557,35 +575,35 @@ describe('Game Integration', () => {
         });
 
         it('should update score display', () => {
-            game.state.score = 123;
+            game.state.core.score = 123;
             game.updateUI();
             
             expect(document.getElementById('score').textContent).toBe('Score: 123');
         });
 
         it('should update combo display', () => {
-            game.state.combo = 5;
+            game.state.core.combo = 5;
             game.updateUI();
             
             expect(document.getElementById('combo').textContent).toBe('Combo: x5');
         });
 
         it('should update lives display', () => {
-            game.state.lives = 2;
+            game.state.core.lives = 2;
             game.updateUI();
             
             expect(document.getElementById('lives').textContent).toBe('❤️❤️');
         });
 
         it('should update power-up status display', () => {
-            game.state.activePowerUps.speedBoost.active = true;
-            game.state.activePowerUps.speedBoost.timeLeft = 5000;
+            game.state.powerUps.speedBoost.active = true;
+            game.state.powerUps.speedBoost.timeLeft = 5000;
             
             game.updateUI();
             
             const powerUpStatus = document.getElementById('powerUpStatus');
             expect(powerUpStatus.children.length).toBe(1);
-            expect(powerUpStatus.innerHTML).toContain('Slow Motion');
+            expect(powerUpStatus.textContent).toContain('Slow Motion');
         });
     });
 
@@ -623,7 +641,7 @@ describe('Game Integration', () => {
             game.handleInput({ x: 120, y: 120 });
             
             expect(game.powerUps.length).toBe(0);
-            expect(game.state.activePowerUps.speedBoost.active).toBe(true);
+            expect(game.state.powerUps.speedBoost.active).toBe(true);
         });
 
         it('should not handle input when paused', () => {
