@@ -824,10 +824,7 @@ export default class Game {
         this.frameCount = 0;
         this.lastSpawn = 0;
         this.lastPowerUpSpawn = 0;
-        
-        // Start background music
-        this.audioSystem.startBackgroundMusic();
-        
+
         // Set game state
         this.state.gameState = 'playing';
         
