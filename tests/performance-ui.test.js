@@ -126,7 +126,7 @@ describe('PerformanceUI', () => {
     it('should create toggle button', () => {
       const button = ui.container.querySelector('button')
       expect(button).not.toBeNull()
-      expect(button.innerHTML).toBe('👁️')
+      expect(button.textContent).toBe('👁️')
     })
   })
   
@@ -149,7 +149,9 @@ describe('PerformanceUI', () => {
     
     it('should color code FPS based on performance', () => {
       ui.update(1000)
-      expect(ui.elements.fps.style.color).toBe('#51cf66') // Green for 60 FPS
+      // Check that color was set (browsers return rgb() format instead of hex)
+      expect(ui.elements.fps.style.color).toBeTruthy()
+      expect(ui.elements.fps.style.color).toMatch(/rgb\(81,\s*207,\s*102\)|#51cf66/)
       
       mockPerformanceMonitor.getStats.mockReturnValue({
         currentFPS: 30,
@@ -162,7 +164,8 @@ describe('PerformanceUI', () => {
       })
       
       ui.update(2000)
-      expect(ui.elements.fps.style.color).toBe('#ff8c42') // Orange for 30 FPS
+      expect(ui.elements.fps.style.color).toBeTruthy()
+      expect(ui.elements.fps.style.color).toMatch(/rgb\(255,\s*140,\s*66\)|#ff8c42/)
     })
     
     it('should update quality display', () => {
@@ -345,13 +348,13 @@ describe('PerformanceUI', () => {
       ui.update(1000)
       
       expect(ui.elements.health.textContent).toBe('✅ Good')
-      expect(ui.elements.health.style.color).toBe('#51cf66')
+      expect(ui.elements.health.style.color).toMatch(/rgb\(81,\s*207,\s*102\)|#51cf66/)
       
       mockPerformanceMonitor.isPerformanceGood.mockReturnValue(false)
       ui.update(1300)
       
       expect(ui.elements.health.textContent).toBe('⚠️ Poor')
-      expect(ui.elements.health.style.color).toBe('#ff6b6b')
+      expect(ui.elements.health.style.color).toMatch(/rgb\(255,\s*107,\s*107\)|#ff6b6b/)
     })
   })
   

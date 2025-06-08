@@ -199,11 +199,7 @@ describe('Entity Classes', () => {
       const ingredient = new Ingredient('cheese', { y: 100 })
       const initialY = ingredient.y
       
-<<<<<<< HEAD
-      ingredient.update(60, null) // Frame 60, no game state
-=======
       ingredient.update(60, null, 16.67) // Frame 60, no game state (deltaTime in ms)
->>>>>>> origin/main
       
       expect(ingredient.y).toBeGreaterThan(initialY)
     })
@@ -261,17 +257,11 @@ describe('Entity Classes', () => {
       
       // Update several times to build trail
       for (let i = 0; i < 5; i++) {
-<<<<<<< HEAD
-        ingredient.update(i)
-=======
         ingredient.update(i, undefined, 16.67)
->>>>>>> origin/main
       }
       
       expect(ingredient.trail.length).toBeGreaterThan(0)
     })
-<<<<<<< HEAD
-=======
 
     it('should fall consistently regardless of deltaTime', () => {
       const a = new Ingredient('cheese', { y: 0, baseSpeed: 4 })
@@ -297,7 +287,6 @@ describe('Entity Classes', () => {
       // independent; allow a small tolerance based on observed behavior
       expect(Math.abs(a.y - b.y)).toBeLessThan(40)
     })
->>>>>>> origin/main
   })
 
   describe('Order', () => {
@@ -327,7 +316,7 @@ describe('Entity Classes', () => {
       const order = new Order(mockTemplate)
       const initialTime = order.timeLeft
       
-      order.update(1) // 1 second
+      order.update(1000) // 1 second
       
       expect(order.timeLeft).toBeLessThan(initialTime)
     })
@@ -340,7 +329,7 @@ describe('Entity Classes', () => {
         isPowerUpActive: vi.fn(() => true)
       }
       
-      order.update(1, mockGameState) // 1 second with time freeze
+      order.update(1000, mockGameState) // 1 second with time freeze
       
       expect(order.timeLeft).toBe(initialTime)
       expect(mockGameState.isPowerUpActive).toHaveBeenCalledWith('timeFreeze')
@@ -350,7 +339,7 @@ describe('Entity Classes', () => {
       const order = new Order(mockTemplate)
       order.timeLeft = 500 // 0.5 seconds
       
-      const result = order.update(1) // 1 second
+      const result = order.update(1000) // 1 second
       
       expect(result).toBe(false)
       expect(order.isExpired()).toBe(true)

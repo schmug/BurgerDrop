@@ -7,7 +7,7 @@ import GameState from './State.js';
 import { Particle } from './entities/Particle.js';
 import { PowerUp } from './entities/PowerUp.js';
 import { Ingredient } from './entities/Ingredient.js';
-import { Order } from './entities/Order.js';
+import { Order, orderTemplates } from './entities/Order.js';
 import AudioSystem from './systems/Audio.js';
 import Renderer from './systems/Renderer.js';
 import { InputSystem } from './systems/Input.js';
@@ -92,14 +92,7 @@ export default class Game {
         this.lastPowerUpSpawn = 0;
         
         // Order templates
-        this.orderTemplates = [
-            { name: 'Classic Burger', ingredients: ['bun_bottom', 'patty', 'cheese', 'lettuce', 'tomato', 'bun_top'], time: 30 },
-            { name: 'Simple Burger', ingredients: ['bun_bottom', 'patty', 'bun_top'], time: 20 },
-            { name: 'Cheese Burger', ingredients: ['bun_bottom', 'patty', 'cheese', 'bun_top'], time: 25 },
-            { name: 'Veggie Burger', ingredients: ['bun_bottom', 'lettuce', 'tomato', 'onion', 'pickle', 'bun_top'], time: 30 },
-            { name: 'Bacon Burger', ingredients: ['bun_bottom', 'patty', 'bacon', 'cheese', 'bun_top'], time: 35 },
-            { name: 'Breakfast Burger', ingredients: ['bun_bottom', 'patty', 'egg', 'bacon', 'cheese', 'bun_top'], time: 40 }
-        ];
+        this.orderTemplates = orderTemplates;
         
         // Bind methods
         this.update = this.update.bind(this);

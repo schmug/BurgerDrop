@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 node_modules/
 dist/
 .env
@@ -12,18 +11,4 @@ coverage/
 IMPLEMENTATION_PLAN.md
 IMPLEMENTATION_TRACKER.md
 PHASE1_IMPLEMENTATION.md
-=======
-node_modules/
-dist/
-.env
-.env.local
-*.log
-.DS_Store
-.wrangler/
-coverage/
-.claude/settings.local.json
-*.backup
-IMPLEMENTATION_PLAN.md
-IMPLEMENTATION_TRACKER.md
-PHASE1_IMPLEMENTATION.md
->>>>>>> origin/main
+src/build/

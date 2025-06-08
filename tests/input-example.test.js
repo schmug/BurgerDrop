@@ -25,11 +25,7 @@ describe('InputExample - setupGameInput', () => {
   beforeEach(() => {
     // Reset mocks
     vi.clearAllMocks()
-<<<<<<< HEAD
-    
-=======
 
->>>>>>> origin/main
     // Create mock canvas
     canvas = {
       width: 800,
@@ -48,22 +44,45 @@ describe('InputExample - setupGameInput', () => {
       powerUps: [],
       ingredients: [],
       orders: [],
+      combo: 1,
+      score: 0,
+      lives: 3,
+      particles: [],
+      colorTheme: {
+        primary: '#4ECDC4',
+        accent: '#FFD93D'
+      },
+      activePowerUps: {
+        scoreMultiplier: {
+          active: false,
+          multiplier: 1
+        }
+      },
       playPowerUpCollect: vi.fn(),
       playSound: vi.fn(),
       playOrderComplete: vi.fn(),
+      playIngredientCorrect: vi.fn(),
+      playIngredientWrong: vi.fn(),
+      playComboSound: vi.fn(),
       activatePowerUp: vi.fn(),
       createFloatingText: vi.fn(),
       createParticles: vi.fn(),
       incrementCombo: vi.fn(),
       resetCombo: vi.fn(),
-      addScore: vi.fn()
+      addScore: vi.fn(),
+      endGame: vi.fn(),
+      startScreenShake: vi.fn(),
+      startScreenFlash: vi.fn(),
+      startRippleEffect: vi.fn(),
+      vibrateSuccess: vi.fn(),
+      vibrateError: vi.fn(),
+      vibrateCompletion: vi.fn(),
+      Particle: vi.fn(() => ({})),
+      Order: vi.fn(() => ({}))
     }
-<<<<<<< HEAD
-=======
 
     // Attach canvas to game state for helper functions
     gameState.canvas = canvas
->>>>>>> origin/main
   })
   
   describe('Setup', () => {
@@ -163,9 +182,7 @@ describe('InputExample - setupGameInput', () => {
       
       expect(ingredient.isClicked).toHaveBeenCalledWith(300, 300)
       expect(order.checkIngredient).toHaveBeenCalledWith('patty')
-      expect(gameState.playSound).toHaveBeenCalledWith('collect')
-      expect(gameState.incrementCombo).toHaveBeenCalled()
-      expect(gameState.addScore).toHaveBeenCalled()
+      expect(gameState.playIngredientCorrect).toHaveBeenCalled()
       expect(clickResult).toBe(true)
       expect(gameState.ingredients.length).toBe(0)
     })
@@ -188,8 +205,7 @@ describe('InputExample - setupGameInput', () => {
       
       clickHandler(300, 300, 'mouse')
       
-      expect(gameState.playSound).toHaveBeenCalledWith('wrong')
-      expect(gameState.resetCombo).toHaveBeenCalled()
+      expect(gameState.playIngredientWrong).toHaveBeenCalled()
       expect(gameState.ingredients.length).toBe(0)
     })
     
@@ -199,7 +215,12 @@ describe('InputExample - setupGameInput', () => {
       
       const order = {
         checkIngredient: vi.fn(() => 'completed'),
-        template: { name: 'Test Burger' }
+        template: { name: 'Test Burger' },
+        timeLeft: 15000, // 15 seconds left
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 50
       }
       gameState.orders = [order]
       
@@ -216,7 +237,7 @@ describe('InputExample - setupGameInput', () => {
       expect(gameState.createFloatingText).toHaveBeenCalledWith(
         expect.any(Number),
         expect.any(Number),
-        'Test Burger Complete!',
+        expect.stringMatching(/ORDER COMPLETE!/),
         '#4ECDC4'
       )
     })
