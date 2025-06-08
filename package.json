@@ -31,6 +31,8 @@
     "@rollup/plugin-terser": "^0.4.0",
     "@vitest/coverage-v8": "^1.0.0",
     "jsdom": "^23.0.0",
+    "node-fetch": "^3.3.2",
+    "puppeteer": "^24.10.0",
     "rollup": "^4.0.0",
     "rollup-plugin-string": "^3.0.0",
     "vitest": "^1.0.0",
