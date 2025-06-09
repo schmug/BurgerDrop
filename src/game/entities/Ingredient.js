@@ -289,6 +289,7 @@ export class Ingredient {
      * @returns {boolean} True if clicked
      */
     isClicked(x, y) {
+        if (this.collected) return false;
         return x >= this.x && x <= this.x + this.data.size &&
                y >= this.y && y <= this.y + this.data.size;
     }
