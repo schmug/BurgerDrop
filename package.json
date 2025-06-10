@@ -5,7 +5,7 @@
   "main": "src/worker.js",
   "type": "module",
   "scripts": {
-    "deploy": "wrangler deploy",
+    "deploy": "npm run validate && wrangler deploy",
     "dev": "wrangler dev",
     "test": "vitest",
     "test:run": "vitest run",
@@ -14,7 +14,9 @@
     "build:worker": "node scripts/build-worker.js",
     "build": "npm run build:game && npm run build:worker",
     "build:dev": "rollup -c --environment NODE_ENV:development && npm run build:worker",
-    "build:prod": "NODE_ENV=production npm run build"
+    "build:prod": "NODE_ENV=production npm run build",
+    "validate": "node scripts/validate-deployment.js",
+    "predeploy": "npm run build && npm run validate"
   },
   "keywords": [
     "game",

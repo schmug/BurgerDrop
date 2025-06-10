@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,62 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One:wght@400&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        {{CSS_CONTENT}}
-    </style>
-</head>
-<body>
-    <div class="top-bar">
-        <div class="logo">
-            <span style="font-size: 36px;">🍔</span>
-            <span>Burger Drop!</span>
-        </div>
-        <div class="score-display" id="scoreDisplay">Score: 0</div>
-        <button class="audio-toggle" id="audioToggle" aria-label="Toggle Audio">🔊</button>
-    </div>
-
-    <div class="performance-overlay" id="performanceOverlay"></div>
-
-    <div class="game-container">
-        <canvas id="gameCanvas"></canvas>
-    </div>
-
-    <div class="game-over-overlay" id="gameOverOverlay">
-        <div class="game-over-content">
-            <h1 class="game-over-title">Game Over! 🍔</h1>
-            <div class="final-score">Final Score: <span id="finalScore">0</span></div>
-            <div class="high-score">High Score: <span id="highScore">0</span></div>
-            <button class="play-again-btn" id="playAgainBtn">Play Again!</button>
-        </div>
-    </div>
-
-    <script>
-        // Game code will be injected here by the build process
-        {{GAME_SCRIPT}}
-        
-        // Initialize and start the game after all code is loaded
-        const game = new Game();
-        
-        // Wait for DOM to be ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => game.initialize());
-        } else {
-            game.initialize();
-        }
-    </script>
-</body>
-=======
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Burger Drop! - Restaurant Game</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍔</text></svg>">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One:wght@400&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        {{CSS_CONTENT}}
+    /* STYLES_PLACEHOLDER */
     </style>
 </head>
 <body>
@@ -84,6 +28,10 @@
         <canvas id="gameCanvas"></canvas>
     </div>
 
+    <div id="startScreen">
+        <button class="play-again-btn" id="startButton">Start Game</button>
+    </div>
+
     <div class="game-over-overlay" id="gameOverOverlay">
         <div class="game-over-content">
             <h1 class="game-over-title">Game Over! 🍔</h1>
@@ -94,19 +42,58 @@
     </div>
 
     <script>
-        // Game code will be injected here by the build process
-        {{GAME_SCRIPT}}
+    /* GAME_BUNDLE_PLACEHOLDER */
+    </script>
+    <script>
+        // Wait for DOM to be ready before initializing the game
+        function initGame() {
+            const canvas = document.getElementById('gameCanvas');
+            if (canvas && typeof Game !== 'undefined') {
+                const game = new Game(canvas, {
+                    enablePerformanceMonitoring: false,
+                    showPerformanceUI: false
+                });
+
+                const startButton = document.getElementById('startButton');
+                const startScreen = document.getElementById('startScreen');
+
+                if (startButton) {
+                    startButton.addEventListener('click', () => {
+                        if (startScreen) {
+                            startScreen.style.display = 'none';
+                        }
+                        game.start();
+                    });
+                }
+
+                // Setup UI event handlers
+                const audioToggle = document.getElementById('audioToggle');
+                const playAgainBtn = document.getElementById('playAgainBtn');
+                
+                if (audioToggle) {
+                    audioToggle.addEventListener('click', () => {
+                        game.audioSystem.setEnabled(!game.audioSystem.isEnabled());
+                        audioToggle.textContent = game.audioSystem.isEnabled() ? '🔊' : '🔇';
+                    });
+                }
+                
+                if (playAgainBtn) {
+                    playAgainBtn.addEventListener('click', () => {
+                        document.getElementById('gameOverOverlay').style.display = 'none';
+                        game.start();
+                    });
+                }
+                
+                // Make game available globally for debugging
+                window.game = game;
+            }
+        }
         
-        // Initialize and start the game after all code is loaded
-        const game = new Game();
-        
-        // Wait for DOM to be ready
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => game.initialize());
+            document.addEventListener('DOMContentLoaded', initGame);
         } else {
-            game.initialize();
+            initGame();
         }
     </script>
 </body>
->>>>>>> origin/main
 </html>
