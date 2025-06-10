@@ -8,3 +8,7 @@ dist/
 coverage/
 .claude/settings.local.json
 *.backup
+IMPLEMENTATION_PLAN.md
+IMPLEMENTATION_TRACKER.md
+PHASE1_IMPLEMENTATION.md
+src/build/

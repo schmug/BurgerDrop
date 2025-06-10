@@ -102,6 +102,13 @@ vi.mock('../src/game/State.js', () => {
             }
         }
         
+        endGame() {
+            this.gameState = 'gameOver';
+            if (this.score > this.highScore) {
+                this.highScore = this.score;
+            }
+        }
+        
         activatePowerUp(type, duration = 10000) {
             if (this.activePowerUps[type]) {
                 this.activePowerUps[type].active = true;
@@ -182,7 +189,7 @@ const mockUI = () => {
             <div id="combo">Combo: x1</div>
             <div id="lives">❤️❤️❤️</div>
             <div id="powerUpStatus"></div>
-            <div id="gameOverOverlay" style="display: none;">
+            <div id="gameOver" style="display: none;">
                 <p id="finalScore">Final Score: 0</p>
                 <p id="highScore">High Score: 0</p>
             </div>
@@ -538,7 +545,7 @@ describe('Game Integration', () => {
             game.update(16);
             
             expect(game.state.gameState).toBe('gameOver');
-            expect(document.getElementById('gameOverOverlay').style.display).toBe('block');
+            expect(document.getElementById('gameOver').style.display).toBe('block');
         });
 
         it('should update high score if current score is higher', () => {
@@ -624,6 +631,7 @@ describe('Game Integration', () => {
             
             expect(game.powerUps.length).toBe(0);
             expect(game.state.activePowerUps.speedBoost.active).toBe(true);
+
         });
 
         it('should not handle input when paused', () => {

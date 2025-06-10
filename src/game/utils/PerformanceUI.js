@@ -81,6 +81,29 @@ export class PerformanceUI {
     }
     
     /**
+     * Helper function to create elements safely
+     */
+    createElement(tag, className = null, textContent = null) {
+        const element = document.createElement(tag);
+        if (className) element.className = className;
+        if (textContent) element.textContent = textContent;
+        return element;
+    }
+    
+    /**
+     * Helper function to create labeled value element
+     */
+    createLabeledValue(label, id) {
+        const container = document.createElement('div');
+        container.textContent = label + ': ';
+        const span = document.createElement('span');
+        span.id = id;
+        span.textContent = '--';
+        container.appendChild(span);
+        return container;
+    }
+    
+    /**
      * Get container CSS styles based on position
      */
     getContainerStyles() {
@@ -113,23 +136,36 @@ export class PerformanceUI {
      */
     createFPSSection() {
         const section = document.createElement('div');
-        section.innerHTML = `
-            <div style="font-weight: bold; margin-bottom: 5px;">🎯 Performance</div>
-            <div>FPS: <span id="perf-fps">--</span></div>
-            <div>Avg: <span id="perf-avg-fps">--</span></div>
-            <div>Min: <span id="perf-min-fps">--</span></div>
-            <div>Frame: <span id="perf-frame-time">--</span>ms</div>
-            <div>Drops: <span id="perf-drops">--</span></div>
-        `;
+        
+        // Create title
+        const title = this.createElement('div');
+        title.style.fontWeight = 'bold';
+        title.style.marginBottom = '5px';
+        title.textContent = '🎯 Performance';
+        section.appendChild(title);
+        
+        // Create metric elements with direct references
+        const fpsDiv = this.createLabeledValue('FPS', 'perf-fps');
+        const avgDiv = this.createLabeledValue('Avg', 'perf-avg-fps');
+        const minDiv = this.createLabeledValue('Min', 'perf-min-fps');
+        const frameDiv = this.createLabeledValue('Frame', 'perf-frame-time');
+        frameDiv.appendChild(document.createTextNode('ms'));
+        const dropsDiv = this.createLabeledValue('Drops', 'perf-drops');
+        
+        section.appendChild(fpsDiv);
+        section.appendChild(avgDiv);
+        section.appendChild(minDiv);
+        section.appendChild(frameDiv);
+        section.appendChild(dropsDiv);
         
         this.container.appendChild(section);
         
-        // Store element references
-        this.elements.fps = document.getElementById('perf-fps');
-        this.elements.avgFps = document.getElementById('perf-avg-fps');
-        this.elements.minFps = document.getElementById('perf-min-fps');
-        this.elements.frameTime = document.getElementById('perf-frame-time');
-        this.elements.drops = document.getElementById('perf-drops');
+        // Store element references directly
+        this.elements.fps = fpsDiv.querySelector('span');
+        this.elements.avgFps = avgDiv.querySelector('span');
+        this.elements.minFps = minDiv.querySelector('span');
+        this.elements.frameTime = frameDiv.querySelector('span');
+        this.elements.drops = dropsDiv.querySelector('span');
     }
     
     /**
@@ -138,20 +174,32 @@ export class PerformanceUI {
     createQualitySection() {
         const section = document.createElement('div');
         section.style.marginTop = '10px';
-        section.innerHTML = `
-            <div style="font-weight: bold; margin-bottom: 5px;">⚙️ Quality</div>
-            <div>Level: <span id="perf-quality-level">--</span></div>
-            <div>Particles: <span id="perf-max-particles">--</span></div>
-            <div>Shadows: <span id="perf-shadows">--</span></div>
-            <div>Effects: <span id="perf-effects">--</span></div>
-        `;
+        
+        // Create title
+        const title = this.createElement('div');
+        title.style.fontWeight = 'bold';
+        title.style.marginBottom = '5px';
+        title.textContent = '⚙️ Quality';
+        section.appendChild(title);
+        
+        // Create metric elements with direct references
+        const levelDiv = this.createLabeledValue('Level', 'perf-quality-level');
+        const particlesDiv = this.createLabeledValue('Particles', 'perf-max-particles');
+        const shadowsDiv = this.createLabeledValue('Shadows', 'perf-shadows');
+        const effectsDiv = this.createLabeledValue('Effects', 'perf-effects');
+        
+        section.appendChild(levelDiv);
+        section.appendChild(particlesDiv);
+        section.appendChild(shadowsDiv);
+        section.appendChild(effectsDiv);
         
         this.container.appendChild(section);
         
-        this.elements.qualityLevel = document.getElementById('perf-quality-level');
-        this.elements.maxParticles = document.getElementById('perf-max-particles');
-        this.elements.shadows = document.getElementById('perf-shadows');
-        this.elements.effects = document.getElementById('perf-effects');
+        // Store element references directly
+        this.elements.qualityLevel = levelDiv.querySelector('span');
+        this.elements.maxParticles = particlesDiv.querySelector('span');
+        this.elements.shadows = shadowsDiv.querySelector('span');
+        this.elements.effects = effectsDiv.querySelector('span');
     }
     
     /**
@@ -160,15 +208,23 @@ export class PerformanceUI {
     createPoolsSection() {
         const section = document.createElement('div');
         section.style.marginTop = '10px';
-        section.innerHTML = `
-            <div style="font-weight: bold; margin-bottom: 5px;">🎱 Object Pools</div>
-            <div id="perf-pools-content">
-                <!-- Pool stats will be inserted here -->
-            </div>
-        `;
+        
+        // Create title
+        const title = this.createElement('div');
+        title.style.fontWeight = 'bold';
+        title.style.marginBottom = '5px';
+        title.textContent = '🎱 Object Pools';
+        section.appendChild(title);
+        
+        // Create content container
+        const content = document.createElement('div');
+        content.id = 'perf-pools-content';
+        section.appendChild(content);
         
         this.container.appendChild(section);
-        this.elements.poolsContent = document.getElementById('perf-pools-content');
+        
+        // Store element reference directly
+        this.elements.poolsContent = content;
     }
     
     /**
@@ -177,20 +233,32 @@ export class PerformanceUI {
     createDetailsSection() {
         const section = document.createElement('div');
         section.style.marginTop = '10px';
-        section.innerHTML = `
-            <div style="font-weight: bold; margin-bottom: 5px;">📊 Details</div>
-            <div>Memory: <span id="perf-memory">--</span></div>
-            <div>Entities: <span id="perf-entities">--</span></div>
-            <div>Draw Calls: <span id="perf-draw-calls">--</span></div>
-            <div>Performance: <span id="perf-health">--</span></div>
-        `;
+        
+        // Create title
+        const title = this.createElement('div');
+        title.style.fontWeight = 'bold';
+        title.style.marginBottom = '5px';
+        title.textContent = '📊 Details';
+        section.appendChild(title);
+        
+        // Create metric elements with direct references
+        const memoryDiv = this.createLabeledValue('Memory', 'perf-memory');
+        const entitiesDiv = this.createLabeledValue('Entities', 'perf-entities');
+        const drawCallsDiv = this.createLabeledValue('Draw Calls', 'perf-draw-calls');
+        const healthDiv = this.createLabeledValue('Performance', 'perf-health');
+        
+        section.appendChild(memoryDiv);
+        section.appendChild(entitiesDiv);
+        section.appendChild(drawCallsDiv);
+        section.appendChild(healthDiv);
         
         this.container.appendChild(section);
         
-        this.elements.memory = document.getElementById('perf-memory');
-        this.elements.entities = document.getElementById('perf-entities');
-        this.elements.drawCalls = document.getElementById('perf-draw-calls');
-        this.elements.health = document.getElementById('perf-health');
+        // Store element references directly
+        this.elements.memory = memoryDiv.querySelector('span');
+        this.elements.entities = entitiesDiv.querySelector('span');
+        this.elements.drawCalls = drawCallsDiv.querySelector('span');
+        this.elements.health = healthDiv.querySelector('span');
     }
     
     /**
@@ -199,14 +267,28 @@ export class PerformanceUI {
     createGraphSection() {
         const section = document.createElement('div');
         section.style.marginTop = '10px';
-        section.innerHTML = `
-            <div style="font-weight: bold; margin-bottom: 5px;">📈 FPS Graph</div>
-            <canvas id="perf-graph" width="180" height="50" style="background: rgba(255,255,255,0.1); border-radius: 3px;"></canvas>
-        `;
+        
+        // Create title
+        const title = this.createElement('div');
+        title.style.fontWeight = 'bold';
+        title.style.marginBottom = '5px';
+        title.textContent = '📈 FPS Graph';
+        section.appendChild(title);
+        
+        // Create canvas
+        const canvas = document.createElement('canvas');
+        canvas.id = 'perf-graph';
+        canvas.width = 180;
+        canvas.height = 50;
+        canvas.style.background = 'rgba(255,255,255,0.1)';
+        canvas.style.borderRadius = '3px';
+        section.appendChild(canvas);
         
         this.container.appendChild(section);
-        this.elements.graph = document.getElementById('perf-graph');
-        this.graphCtx = this.elements.graph.getContext('2d');
+        
+        // Store element reference directly
+        this.elements.graph = canvas;
+        this.graphCtx = canvas.getContext('2d');
     }
     
     /**
@@ -214,7 +296,7 @@ export class PerformanceUI {
      */
     createToggleButton() {
         const button = document.createElement('button');
-        button.innerHTML = '👁️';
+        button.textContent = '👁️';
         button.style.cssText = `
             position: absolute;
             top: -5px;
@@ -331,22 +413,33 @@ export class PerformanceUI {
      */
     updatePoolsDisplay() {
         const poolStats = this.poolManager.getStats();
-        let html = '';
-        
-        for (const [name, stats] of Object.entries(poolStats)) {
-            const utilization = ((stats.activeCount / (stats.poolSize + stats.activeCount)) * 100).toFixed(0);
-            const efficiency = (stats.reuseRatio * 100).toFixed(0);
-            
-            html += `
-                <div style="font-size: 10px; margin: 2px 0;">
-                    <div>${name}: ${stats.activeCount}/${stats.poolSize + stats.activeCount}</div>
-                    <div style="color: #888;">Use: ${utilization}% | Reuse: ${efficiency}%</div>
-                </div>
-            `;
-        }
         
         if (this.elements.poolsContent) {
-            this.elements.poolsContent.innerHTML = html;
+            // Clear existing content
+            while (this.elements.poolsContent.firstChild) {
+                this.elements.poolsContent.removeChild(this.elements.poolsContent.firstChild);
+            }
+            
+            // Create pool stat elements
+            for (const [name, stats] of Object.entries(poolStats)) {
+                const utilization = ((stats.activeCount / (stats.poolSize + stats.activeCount)) * 100).toFixed(0);
+                const efficiency = (stats.reuseRatio * 100).toFixed(0);
+                
+                const poolDiv = document.createElement('div');
+                poolDiv.style.fontSize = '10px';
+                poolDiv.style.margin = '2px 0';
+                
+                const nameDiv = document.createElement('div');
+                nameDiv.textContent = `${name}: ${stats.activeCount}/${stats.poolSize + stats.activeCount}`;
+                poolDiv.appendChild(nameDiv);
+                
+                const statsDiv = document.createElement('div');
+                statsDiv.style.color = '#888';
+                statsDiv.textContent = `Use: ${utilization}% | Reuse: ${efficiency}%`;
+                poolDiv.appendChild(statsDiv);
+                
+                this.elements.poolsContent.appendChild(poolDiv);
+            }
         }
     }
     
