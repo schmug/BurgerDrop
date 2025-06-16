@@ -10,11 +10,15 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest watch",
     "build:game": "rollup -c",
     "build:worker": "node scripts/build-worker.js",
     "build": "npm run build:game && npm run build:worker",
     "build:dev": "rollup -c --environment NODE_ENV:development && npm run build:worker",
-    "build:prod": "NODE_ENV=production npm run build"
+    "build:prod": "NODE_ENV=production npm run build",
+    "precommit": "node scripts/pre-commit-check.js",
+    "check": "npm run test:run && npm run build",
+    "check:full": "npm run test:coverage && npm run build"
   },
   "keywords": [
     "game",

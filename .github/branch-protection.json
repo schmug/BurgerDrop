@@ -1,0 +1,25 @@
+{
+  "required_status_checks": {
+    "strict": true,
+    "contexts": [
+      "Test Suite (18.x)",
+      "Test Suite (20.x)",
+      "Build Verification",
+      "PR Status Summary"
+    ]
+  },
+  "enforce_admins": true,
+  "required_pull_request_reviews": {
+    "required_approving_review_count": 1,
+    "dismiss_stale_reviews": true,
+    "require_review_from_codeowners": false,
+    "require_last_push_approval": true
+  },
+  "dismiss_stale_reviews": true,
+  "require_branches_to_be_up_to_date_before_merging": true,
+  "require_conversation_resolution": true,
+  "require_linear_history": false,
+  "restrictions": null,
+  "allow_force_pushes": false,
+  "allow_deletions": false
+}

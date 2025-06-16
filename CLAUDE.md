@@ -1,277 +1,172 @@
-<<<<<<< HEAD
-# CLAUDE.md
+# BurgerDrop Development Guide
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This document outlines the development workflow and best practices for the BurgerDrop project. It serves as a comprehensive guide for developers working on this HTML5 canvas game, covering test-driven development practices, Git/GitHub workflows, and Cloudflare deployment procedures. All team members should follow these guidelines to maintain code quality and ensure smooth collaboration.
 
-## Project Overview
+## Test-Driven Development (TDD) Process
 
-BurgerDrop is an HTML5 canvas game where players tap falling ingredients to complete burger orders. The game is deployed via Cloudflare Workers for serverless hosting.
+### Mandatory Testing Requirements
 
-## Architecture
+All functional code must have corresponding tests without exception. Every new feature, bug fix, or enhancement requires comprehensive test coverage before it can be merged into the main branch. This is a non-negotiable requirement that ensures code reliability and maintainability.
 
-- **Cloudflare Workers deployment**: Game is served from `src/worker.js` with embedded HTML
-- **Canvas-based rendering**: Uses HTML5 canvas for game graphics with 2D context
-- **Entity system**: Implemented through classes:
-  - `Ingredient`: Falling game objects with physics, trail effects, and rotation
-  - `Order`: Customer orders with timer mechanics and progress tracking
-  - `Particle`: Advanced particle system for visual effects and feedback
-  - `PowerUp`: Collectible items with various gameplay effects
-- **Game loop**: Standard requestAnimationFrame-based game loop with delta time
-- **State management**: Global variables for game state (score, lives, combo, etc.)
-- **Touch/click input**: Unified event handling for mobile and desktop
-- **Audio system**: Web Audio API with procedural music generation and sound synthesis
-- **Visual effects**: Dynamic color themes, particle systems, and smooth animations
-- **Easing functions**: Custom mathematical easing for smooth transitions
+No mockups or dummy code should ever be committed to the repository. Only fully working, tested code that provides real functionality is allowed. All features must be developed through actual implementations guided by tests, not through placeholder or prototype code.
 
-## Game Mechanics
+### TDD Workflow
 
-### Core Gameplay
-- **Ingredient matching**: Players must tap ingredients in the correct order to complete orders
-- **Order system**: Multiple simultaneous orders with time limits and progress tracking
-- **Scoring**: Base points multiplied by combo multiplier, with time bonuses
-- **Difficulty scaling**: Ingredient speed and spawn rate increase over time
-- **Lives system**: Players lose lives when orders expire
+The project follows a strict test-driven development workflow:
 
-### Power-Up System
-- **Speed Boost**: Temporarily slows down falling ingredients
-- **Time Freeze**: Pauses order timers for a brief period
-- **Score Multiplier**: Doubles points for a limited time
-- **Random spawning**: Power-ups appear occasionally during gameplay
-- **Visual feedback**: Distinct animations and effects for each power-up type
+1. **Write Tests First**: Before implementing any new feature or fixing any bug, write comprehensive test cases that define the expected behavior. These tests should cover both the happy path and edge cases.
 
-### Audio System
-- **Procedural music**: Dynamic background music generated using Web Audio API
-- **Sound effects**: Custom synthesized sounds for interactions
-- **Audio controls**: Mute/unmute functionality with persistent settings
-- **Web Audio API**: Advanced audio synthesis with custom waveforms
+2. **Verify Test Failure**: Run the tests to ensure they fail initially. This confirms that the tests are actually testing something meaningful and not passing due to false positives.
 
-### Visual Effects
-- **Particle system**: Dynamic particles for ingredient trails, explosions, and feedback
-- **Trail effects**: Smooth ingredient trails with gradient rendering
-- **Color themes**: Dynamic background colors that shift based on performance
-- **Smooth animations**: Custom easing functions for natural movement
-- **Screen effects**: Subtle visual feedback for game events
+3. **Implement Minimal Code**: Write the minimum amount of code necessary to make the tests pass. Avoid over-engineering or adding functionality that isn't covered by tests.
 
-### Mobile Features
-- **Touch optimization**: Responsive touch handling with proper event prevention
-- **Vibration feedback**: Haptic feedback for enhanced mobile experience
-- **Responsive design**: Automatic canvas resizing for different screen sizes
-- **Performance optimization**: Frame-rate aware animations and effects
+4. **Refactor**: Once tests are passing, refactor the code to improve quality, readability, and performance while ensuring tests continue to pass.
 
-## Development Notes
+5. **Test Types**: Write both unit tests for individual components and integration tests for feature interactions. Tests should serve as living documentation of expected behavior.
 
-- No build process or external dependencies required
-- Game uses localStorage for high score persistence (with fallback for sandboxed environments)
-- Responsive design with canvas resizing for different screen sizes
-- Mobile-optimized with touch event handling and scroll prevention
+## Git and GitHub Workflow
 
-## Performance Optimizations
+### Branching Strategy
 
-- **Particle management**: Automatic culling of particles when count exceeds limits
-- **Trail rendering**: Efficient gradient-based trail effects with alpha blending
-- **Frame-rate awareness**: Animations scaled by delta time for consistent performance
-- **Memory management**: Automatic cleanup of expired game objects
-- **Canvas optimization**: Minimal redraw operations and efficient rendering
-- **Audio optimization**: Reusable AudioContext and efficient sound synthesis
-- **Event handling**: Debounced input processing to prevent excessive calculations
+Each new feature, enhancement, or bug fix must be developed in a separate feature branch. Branch names should be descriptive and follow the pattern `feature/feature-name` or `fix/bug-description`. This isolation ensures that work in progress doesn't affect the stable main branch and makes it easier to manage multiple concurrent development efforts.
 
-## Deployment
+### Commit Guidelines
 
-- **Cloudflare Workers**: Game is deployed via Cloudflare Workers with embedded HTML
-- **GitHub Actions**: Automatic deployment on push to main branch
-- **Wrangler**: Uses wrangler 4.18.0 for deployment management
-- **Worker Architecture**: HTML is embedded directly in `src/worker.js` for serverless deployment
+Make frequent, atomic commits with clear and descriptive commit messages. Each commit should represent a logical unit of work that can be understood in isolation. Commit messages should follow this format:
+- Present tense, imperative mood (e.g., "Add user authentication tests" not "Added tests")
+- First line should be a concise summary (50 characters or less)
+- Add detailed explanation in subsequent lines if needed
+- Reference issue numbers when applicable (e.g., "Fix #123: Resolve score calculation bug")
 
-## Advanced Features
+### Remote Collaboration
 
-- **Dynamic difficulty**: Game speed and complexity increase based on player performance
-- **Emoji variants**: Ingredients occasionally display alternate emoji variants for visual variety
-- **Mathematical easing**: Custom cubic and exponential easing functions for smooth animations
-- **Contextual audio**: Audio frequencies and patterns that respond to game events
-- **Progressive enhancement**: Game works in sandboxed environments with graceful feature degradation
-- **Performance monitoring**: Frame-rate aware systems that adapt to device capabilities
+Push changes to the remote GitHub repository regularly to ensure work is backed up and visible to the team. Before pushing, always pull the latest changes from the main branch and resolve any conflicts locally. This practice minimizes integration issues and keeps everyone synchronized.
 
-## Testing
+### Pull Request Process
 
-The project includes a comprehensive testing framework using Vitest:
+When a feature is ready for review:
 
-- **Test Framework**: Vitest with JSDOM environment for DOM testing
-- **Coverage**: V8 coverage provider with HTML, JSON, and text reports
-- **Test Categories**:
-  - Game logic tests (ingredients, orders, scoring)
-  - Collision detection tests
-  - Audio system tests
-  - Power-up system tests
-  - Cloudflare Worker tests
-- **Mocking**: Canvas API, Web Audio API, and localStorage are mocked for testing
+1. **Create Pull Request**: Open a PR on GitHub with a clear title and comprehensive description
+2. **PR Description**: Include:
+   - Summary of changes made
+   - Link to related issue or ticket
+   - Testing instructions
+   - Any deployment considerations
+   - Screenshots for UI changes
+3. **Review Assignment**: Request review from appropriate team members
+4. **CI Checks**: Ensure all automated checks pass before requesting review
 
-## Commands
+## Cloudflare Deployment and MCP Integration
 
-- `npm run dev` - Start local development server with wrangler
-- `npm run deploy` - Deploy to Cloudflare Workers
-- `npm test` - Run tests in watch mode
-- `npm run test:run` - Run tests once
-- `npm run test:coverage` - Run tests with coverage report
-- `wrangler login` - Authenticate with Cloudflare (required once)
+### Cloudflare Project Setup
 
-## Setup Requirements
+The project deploys to Cloudflare Workers using the following configuration:
 
-For deployment, add these GitHub repository secrets:
-- `CLOUDFLARE_API_TOKEN` - Your Cloudflare API token
-- `CLOUDFLARE_ACCOUNT_ID` - Your Cloudflare account ID
+1. **Initial Setup**: Ensure you have a Cloudflare account with appropriate permissions. The project requires two secrets in GitHub: `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
 
-## Troubleshooting
+2. **Build Process**: Before deployment, run `npm run build` to bundle the game and inject it into the worker. This step is critical as the game won't function in production without proper bundling.
 
-### Known Issues
-- **Test coverage source mapping error**: The V8 coverage provider may show a source mapping error. This doesn't affect test execution or results, only coverage report generation. Use `npm run test:run` for testing without coverage if needed.
-- **CJS deprecation warning**: Vitest shows a warning about CJS build deprecation. This is non-critical and doesn't affect functionality.
+3. **Local Development**: Use `npm run dev` to start a local development server with Wrangler. This allows testing the Cloudflare Worker environment locally at http://localhost:8787.
 
-### Performance Tips
-- Game automatically adapts to device performance capabilities
-- Audio can be muted for better performance on lower-end devices
-=======
-# CLAUDE.md
+### Testing Deployments with MCP
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Cloudflare's Model Context Protocol (MCP) integration enables sophisticated deployment testing:
 
-## Project Overview
+1. **MCP Server Integration**: The project can leverage Cloudflare's MCP servers to simulate production environments during development. Use the Cloudflare CLI or SDK to validate application behavior in Cloudflare's infrastructure.
 
-BurgerDrop is an HTML5 canvas game where players tap falling ingredients to complete burger orders. The game is deployed via Cloudflare Workers for serverless hosting.
+2. **Automated Testing**: Claude AI can assist in deployment validation through MCP integration. This includes checking worker configuration, testing edge cases, and ensuring proper asset delivery.
 
-## Architecture
+3. **Preview Deployments**: Each pull request triggers a preview deployment on Cloudflare, allowing reviewers to test changes in a production-like environment before merging.
 
-- **Cloudflare Workers deployment**: Game is served from `src/worker.js` with embedded HTML
-- **Canvas-based rendering**: Uses HTML5 canvas for game graphics with 2D context
-- **Entity system**: Implemented through classes:
-  - `Ingredient`: Falling game objects with physics, trail effects, and rotation
-  - `Order`: Customer orders with timer mechanics and progress tracking
-  - `Particle`: Advanced particle system for visual effects and feedback
-  - `PowerUp`: Collectible items with various gameplay effects
-- **Game loop**: Standard requestAnimationFrame-based game loop with delta time
-- **State management**: Global variables for game state (score, lives, combo, etc.)
-- **Touch/click input**: Unified event handling for mobile and desktop
-- **Audio system**: Web Audio API with procedural music generation and sound synthesis
-- **Visual effects**: Dynamic color themes, particle systems, and smooth animations
-- **Easing functions**: Custom mathematical easing for smooth transitions
+### Deployment Gates in PRs
 
-## Game Mechanics
+All pull requests must pass deployment tests on Cloudflare before merging:
 
-### Core Gameplay
-- **Ingredient matching**: Players must tap ingredients in the correct order to complete orders
-- **Order system**: Multiple simultaneous orders with time limits and progress tracking
-- **Scoring**: Base points multiplied by combo multiplier, with time bonuses
-- **Difficulty scaling**: Ingredient speed and spawn rate increase over time
-- **Lives system**: Players lose lives when orders expire
+1. **Automated Deployment Checks**: The CI/CD pipeline automatically deploys PR changes to a staging environment on Cloudflare Workers.
 
-### Power-Up System
-- **Speed Boost**: Temporarily slows down falling ingredients
-- **Time Freeze**: Pauses order timers for a brief period
-- **Score Multiplier**: Doubles points for a limited time
-- **Random spawning**: Power-ups appear occasionally during gameplay
-- **Visual feedback**: Distinct animations and effects for each power-up type
+2. **Required Checks**: PRs cannot be merged unless:
+   - All tests pass (unit and integration)
+   - Build process completes successfully
+   - Cloudflare deployment succeeds
+   - No security vulnerabilities are detected
 
-### Audio System
-- **Procedural music**: Dynamic background music generated using Web Audio API
-- **Sound effects**: Custom synthesized sounds for interactions
-- **Audio controls**: Mute/unmute functionality with persistent settings
-- **Web Audio API**: Advanced audio synthesis with custom waveforms
+3. **Performance Validation**: Deployment checks include performance metrics to ensure changes don't degrade game performance.
 
-### Visual Effects
-- **Particle system**: Dynamic particles for ingredient trails, explosions, and feedback
-- **Trail effects**: Smooth ingredient trails with gradient rendering
-- **Color themes**: Dynamic background colors that shift based on performance
-- **Smooth animations**: Custom easing functions for natural movement
-- **Screen effects**: Subtle visual feedback for game events
+## Updating Documentation
 
-### Mobile Features
-- **Touch optimization**: Responsive touch handling with proper event prevention
-- **Vibration feedback**: Haptic feedback for enhanced mobile experience
-- **Responsive design**: Automatic canvas resizing for different screen sizes
-- **Performance optimization**: Frame-rate aware animations and effects
+### Maintaining CLAUDE.md
 
-## Development Notes
+This CLAUDE.md file is a living document that must be kept current as the project evolves. When workflows change, new tools are adopted, or best practices are updated, this file must be modified accordingly. Regular reviews should be conducted to ensure the documentation accurately reflects current development practices.
 
-- No build process or external dependencies required
-- Game uses localStorage for high score persistence (with fallback for sandboxed environments)
-- Responsive design with canvas resizing for different screen sizes
-- Mobile-optimized with touch event handling and scroll prevention
+### Other Project Documentation
 
-## Performance Optimizations
+Keep all documentation up-to-date, including:
+- Main README.md with setup instructions
+- API documentation for game systems
+- Architecture documentation for major components
+- Inline code comments for complex logic
+- Test documentation explaining test strategies
 
-- **Particle management**: Automatic culling of particles when count exceeds limits
-- **Trail rendering**: Efficient gradient-based trail effects with alpha blending
-- **Frame-rate awareness**: Animations scaled by delta time for consistent performance
-- **Memory management**: Automatic cleanup of expired game objects
-- **Canvas optimization**: Minimal redraw operations and efficient rendering
-- **Audio optimization**: Reusable AudioContext and efficient sound synthesis
-- **Event handling**: Debounced input processing to prevent excessive calculations
+### Documentation in PRs
 
-## Deployment
+Documentation updates should be included in the same pull request as the code changes they describe. When submitting a PR:
+1. Review if any documentation needs updating
+2. Include documentation changes in the same PR
+3. Ensure examples and code snippets remain accurate
+4. Update version numbers and changelog if applicable
 
-- **Cloudflare Workers**: Game is deployed via Cloudflare Workers with embedded HTML
-- **GitHub Actions**: Automatic deployment on push to main branch
-- **Wrangler**: Uses wrangler 4.18.0 for deployment management
-- **Worker Architecture**: HTML is embedded directly in `src/worker.js` for serverless deployment
+## Pull Request Review and Merging Process
 
-## Advanced Features
+### Passing Tests
 
-- **Dynamic difficulty**: Game speed and complexity increase based on player performance
-- **Emoji variants**: Ingredients occasionally display alternate emoji variants for visual variety
-- **Mathematical easing**: Custom cubic and exponential easing functions for smooth animations
-- **Contextual audio**: Audio frequencies and patterns that respond to game events
-- **Progressive enhancement**: Game works in sandboxed environments with graceful feature degradation
-- **Performance monitoring**: Frame-rate aware systems that adapt to device capabilities
+All pull requests must pass the complete test suite before merging:
+- Unit tests via `npm run test:run`
+- Integration tests for feature interactions
+- Coverage requirements (maintain or improve coverage)
+- Linting and code quality checks
 
-## Testing
+Any failing test blocks the PR from merging until resolved. The main branch must always remain in a deployable state.
 
-The project includes a comprehensive testing framework using Vitest:
+### Code Review
 
-- **Test Framework**: Vitest with JSDOM environment for DOM testing
-- **Coverage**: V8 coverage provider with HTML, JSON, and text reports
-- **Test Categories**:
-  - Game logic tests (ingredients, orders, scoring)
-  - Collision detection tests
-  - Audio system tests
-  - Power-up system tests
-  - Cloudflare Worker tests
-- **Mocking**: Canvas API, Web Audio API, and localStorage are mocked for testing
+The code review process ensures quality and knowledge sharing:
 
-## Commands
+1. **Review Requirements**: At least one approval from a team member is required
+2. **Review Focus**:
+   - Code correctness and test coverage
+   - Performance implications
+   - Security considerations
+   - Code style and maintainability
+   - Documentation completeness
 
-- `npm run dev` - Start local development server with wrangler
-- `npm run deploy` - Deploy to Cloudflare Workers
-- `npm test` - Run tests in watch mode
-- `npm run test:run` - Run tests once
-- `npm run test:coverage` - Run tests with coverage report
-- `wrangler login` - Authenticate with Cloudflare (required once)
+3. **Feedback Response**: Address all review comments before merging. Use the GitHub conversation features to discuss and resolve feedback.
 
-## Development Workflow
+### Merging Guidelines
 
-### Building and Deploying Changes
+Follow these guidelines when merging approved PRs:
 
-After making substantial changes to the game:
+1. **Update Branch**: Ensure the feature branch is up-to-date with main
+2. **Merge Strategy**: Use squash and merge for feature branches to maintain clean history
+3. **Merge Commit Message**: Ensure the merge commit has a clear, descriptive message
+4. **Branch Cleanup**: Delete the feature branch after successful merge
 
-1. **Build the game**: Run `npm run build` to bundle the game and inject it into the worker
-2. **Test locally**: Run `npm run dev` and test at http://localhost:8787
-3. **Commit changes**: Stage all changes with `git add -A`, then commit with a descriptive message
-4. **Push to deploy**: Push to the main branch to trigger automatic deployment via GitHub Actions
+### Post-Merge Checks
 
-**Important**: The game won't work in production until the build process is run and changes are deployed. Always ensure `npm run build` is run before committing when game code is modified.
+After merging:
+1. Monitor the automatic deployment to production via GitHub Actions
+2. Verify the deployment succeeded in Cloudflare dashboard
+3. Perform smoke tests on the production site
+4. Update project board or issue tracker to reflect completed work
 
-## Setup Requirements
+## Conclusion
 
-For deployment, add these GitHub repository secrets:
-- `CLOUDFLARE_API_TOKEN` - Your Cloudflare API token
-- `CLOUDFLARE_ACCOUNT_ID` - Your Cloudflare account ID
+Following these development practices ensures high code quality, smooth deployments, and effective collaboration. The combination of test-driven development, structured Git workflows, and automated Cloudflare deployments creates a robust development environment. By maintaining comprehensive tests, clear documentation, and rigorous review processes, we ensure the BurgerDrop project remains maintainable and reliable.
 
-## Troubleshooting
+### Additional Resources
 
-### Known Issues
-- **Test coverage source mapping error**: The V8 coverage provider may show a source mapping error. This doesn't affect test execution or results, only coverage report generation. Use `npm run test:run` for testing without coverage if needed.
-- **CJS deprecation warning**: Vitest shows a warning about CJS build deprecation. This is non-critical and doesn't affect functionality.
+- [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
+- [Vitest Testing Framework](https://vitest.dev/)
+- [Anthropic Claude Documentation](https://docs.anthropic.com/en/docs/claude-code)
+- [GitHub Flow Guide](https://guides.github.com/introduction/flow/)
 
-### Performance Tips
-- Game automatically adapts to device performance capabilities
-- Audio can be muted for better performance on lower-end devices
->>>>>>> origin/main
-- Particle effects are automatically culled to maintain frame rate
+Adhering to these guidelines helps maintain our high standards for code quality and ensures efficient development workflows. Thank you for following these best practices!

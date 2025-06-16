@@ -1,0 +1,178 @@
+name: Run Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Test Suite
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Needed for proper git history
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: |
+          # Add linting when eslint is configured
+          echo "Linting check placeholder - configure ESLint"
+
+      - name: Run tests
+        run: npm run test:run
+
+      - name: Generate coverage report
+        run: npm run test:coverage
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-node-${{ matrix.node-version }}
+          path: coverage/
+          retention-days: 7
+
+      - name: Check coverage thresholds
+        run: |
+          # Extract coverage summary from coverage report
+          if [ -f coverage/coverage-summary.json ]; then
+            echo "Coverage summary:"
+            cat coverage/coverage-summary.json | jq '.total'
+            
+            # Check if coverage meets minimum threshold (80%)
+            COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
+            echo "Line coverage: $COVERAGE%"
+            
+            if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+              echo "❌ Coverage is below 80% threshold"
+              exit 1
+            else
+              echo "✅ Coverage meets threshold"
+            fi
+          else
+            echo "⚠️ No coverage report found"
+          fi
+
+      - name: Comment PR with coverage
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            // Check if coverage summary exists
+            const coveragePath = path.join(process.cwd(), 'coverage', 'coverage-summary.json');
+            if (!fs.existsSync(coveragePath)) {
+              console.log('No coverage report found');
+              return;
+            }
+            
+            const coverage = JSON.parse(fs.readFileSync(coveragePath, 'utf8'));
+            const total = coverage.total;
+            
+            const comment = `## Test Coverage Report (Node ${{ matrix.node-version }})
+            
+            | Metric | Coverage | Details |
+            |--------|----------|---------|
+            | Lines | ${total.lines.pct.toFixed(2)}% | ${total.lines.covered}/${total.lines.total} |
+            | Statements | ${total.statements.pct.toFixed(2)}% | ${total.statements.covered}/${total.statements.total} |
+            | Functions | ${total.functions.pct.toFixed(2)}% | ${total.functions.covered}/${total.functions.total} |
+            | Branches | ${total.branches.pct.toFixed(2)}% | ${total.branches.covered}/${total.branches.total} |
+            
+            ${total.lines.pct >= 80 ? '✅ Coverage meets minimum threshold (80%)' : '❌ Coverage below minimum threshold (80%)'}`;
+            
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('Test Coverage Report')
+            );
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
+
+  build-test:
+    runs-on: ubuntu-latest
+    name: Build Verification
+    needs: test
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Verify build output
+        run: |
+          # Check that build outputs exist
+          if [ ! -f "src/worker.js" ]; then
+            echo "❌ Build failed: src/worker.js not found"
+            exit 1
+          fi
+          
+          echo "✅ Build verification passed"
+
+      - name: Test deployment locally
+        run: |
+          # Start wrangler dev server in background
+          npm run dev &
+          SERVER_PID=$!
+          
+          # Wait for server to start
+          sleep 10
+          
+          # Test if server responds
+          if curl -f http://localhost:8787 > /dev/null 2>&1; then
+            echo "✅ Local deployment test passed"
+            kill $SERVER_PID
+          else
+            echo "❌ Local deployment test failed"
+            kill $SERVER_PID
+            exit 1
+          fi

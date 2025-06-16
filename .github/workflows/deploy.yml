@@ -7,9 +7,14 @@ on:
     branches: [ main ]
 
 jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+    
   deploy:
     runs-on: ubuntu-latest
     name: Deploy
+    needs: test  # Only deploy if tests pass
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
 

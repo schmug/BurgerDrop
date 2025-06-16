@@ -2,32 +2,21 @@ var Game = (function () {
     'use strict';
 
     /**
-     * Storage utility functions
-     * Provides safe access to localStorage in environments
-     * where storage access may be restricted.
-     */
-
-    function isLocalStorageAvailable() {
-        try {
-            const key = '__storage_test__';
-            window.localStorage.setItem(key, key);
-            window.localStorage.removeItem(key);
-            return true;
-        } catch (e) {
-            return false;
-        }
-    }
-
-    /**
      * Game State Management
      * 
      * Centralized state management system replacing global variables.
      * Provides event-driven architecture with validation and debugging capabilities.
      */
 
-
     class GameState {
         constructor() {
+            // Internal state storage
+            this._gameState = 'menu';
+            this._score = 0;
+            this._lives = 3;
+            this._combo = 1;
+            this._highScore = 0;
+            
             // Core game state
             this.core = {
                 running: false,
@@ -39,6 +28,9 @@ var Game = (function () {
                 lastTime: 0,
                 highScore: this.loadHighScore()
             };
+            
+            // Initialize legacy properties from core
+            this._highScore = this.core.highScore;
 
             // Entity collections
             this.entities = {
@@ -48,12 +40,13 @@ var Game = (function () {
                 particles: []
             };
 
-            // Power-up state
+            // Power-up state (both new and legacy naming)
             this.powerUps = {
                 speedBoost: { active: false, timeLeft: 0, multiplier: 0.5 },
                 timeFreeze: { active: false, timeLeft: 0 },
                 scoreMultiplier: { active: false, timeLeft: 0, multiplier: 2 }
             };
+            this.activePowerUps = this.powerUps; // Legacy compatibility
 
             // UI state
             this.ui = {
@@ -89,26 +82,65 @@ var Game = (function () {
             };
         }
 
+        // Legacy compatibility - property getters and setters
+        get gameState() { return this._gameState; }
+        set gameState(value) { 
+            this._gameState = value;
+            this.core.running = (value === 'playing');
+        }
+
+        get score() { return this._score; }
+        set score(value) { 
+            this._score = value;
+            this.core.score = value;
+        }
+
+        get lives() { return this._lives; }
+        set lives(value) { 
+            this._lives = value;
+            this.core.lives = value;
+        }
+
+        get combo() { return this._combo; }
+        set combo(value) { 
+            this._combo = value;
+            this.core.combo = value;
+        }
+
+        get highScore() { return this._highScore; }
+        set highScore(value) { 
+            this._highScore = value;
+            this.core.highScore = value;
+        }
+
         /**
          * Core game state mutations
          */
         updateScore(points) {
             const oldScore = this.core.score;
             this.core.score += Math.floor(points);
+            this._score = this.core.score; // Keep legacy property in sync
             
             // Update high score if needed
             if (this.core.score > this.core.highScore) {
                 this.core.highScore = this.core.score;
+                this._highScore = this.core.highScore; // Keep legacy property in sync
                 this.saveHighScore();
                 this.emit('newHighScore', this.core.highScore);
             }
             
             this.emit('scoreChanged', { old: oldScore, new: this.core.score });
         }
+        
+        // Legacy compatibility method
+        addScore(points) {
+            this.updateScore(points);
+        }
 
         updateCombo(value) {
             const oldCombo = this.core.combo;
             this.core.combo = Math.max(1, Math.min(value, 10)); // Cap at 10
+            this._combo = this.core.combo; // Keep legacy property in sync
             this.emit('comboChanged', { old: oldCombo, new: this.core.combo });
         }
 
@@ -123,6 +155,7 @@ var Game = (function () {
         loseLife() {
             const oldLives = this.core.lives;
             this.core.lives = Math.max(0, this.core.lives - 1);
+            this._lives = this.core.lives; // Keep legacy property in sync
             this.emit('livesChanged', { old: oldLives, new: this.core.lives });
             
             if (this.core.lives === 0) {
@@ -142,6 +175,16 @@ var Game = (function () {
         updateFrameCount(deltaTime) {
             this.core.frameCount++;
             this.core.lastTime = performance.now();
+        }
+
+        /**
+         * Main update method called by Game.js
+         * @param {number} deltaTime - Time since last update in milliseconds
+         */
+        update(deltaTime) {
+            this.updateFrameCount(deltaTime);
+            this.updatePowerUps(deltaTime / 1000); // Convert to seconds for power-ups
+            this.updateLevel();
         }
 
         /**
@@ -262,6 +305,12 @@ var Game = (function () {
             this.core.level = 1;
             this.core.frameCount = 0;
             
+            // Update legacy compatibility properties
+            this._gameState = 'playing';
+            this._score = 0;
+            this._lives = 3;
+            this._combo = 1;
+
             // Clear all entities
             Object.keys(this.entities).forEach(type => {
                 this.clearEntities(type);
@@ -283,10 +332,12 @@ var Game = (function () {
 
         endGame() {
             this.core.running = false;
+            this._gameState = 'gameOver';
             
             // Save high score
             if (this.core.score > this.core.highScore) {
                 this.core.highScore = this.core.score;
+                this._highScore = this.core.highScore; // Keep legacy property in sync
                 this.saveHighScore();
             }
             
@@ -1426,6 +1477,7 @@ var Game = (function () {
          * @returns {boolean} True if clicked
          */
         isClicked(x, y) {
+            if (this.collected) return false;
             return x >= this.x && x <= this.x + this.data.size &&
                    y >= this.y && y <= this.y + this.data.size;
         }
@@ -5762,10 +5814,10 @@ var Game = (function () {
             // Initialize game state
             this.state = new GameState();
             this.state.core.lives = this.config.initialLives;
-            
+
             // Add gameState property for compatibility
             this.gameState = 'menu';
-            
+          
             // Initialize systems
             this.audioSystem = new AudioSystem();
             this.renderer = new Renderer(this.canvas);
@@ -5806,7 +5858,7 @@ var Game = (function () {
             this.lastSpawn = 0;
             this.lastPowerUpSpawn = 0;
             
-            // Order templates
+            // Use imported order templates
             this.orderTemplates = orderTemplates;
             
             // Bind methods
@@ -5928,7 +5980,7 @@ var Game = (function () {
          * Setup input event handlers
          */
         setupInputHandlers() {
-            this.unregisterClick = this.inputSystem.onClick((x, y, type) => this.handleInput({ x, y, type }));
+            this.unregisterClick = this.inputSystem.onClick((event) => this.handleInput(event));
         }
         
         /**
@@ -5936,8 +5988,7 @@ var Game = (function () {
          * @param {Object} event - Input event data
          */
         handleInput(event) {
-            if (this.gameState !== 'playing' || this.isPaused) return;
-            
+            if (this.state.gameState !== 'playing' || this.isPaused) return;
             const { x, y } = event;
             
             // Check power-up collection
@@ -6014,8 +6065,7 @@ var Game = (function () {
             if (result !== 'wrong') {
                 // Correct ingredient
                 const points = this.calculatePoints(ingredient, correctOrder);
-                this.state.updateScore(points);
-                
+                this.state.addScore(points);
                 if (result === 'completed') {
                     // Order completed
                     this.completeOrder(correctOrder);
@@ -6051,77 +6101,19 @@ var Game = (function () {
                 this.renderer.startScreenShake(10, 15);
                 this.audioSystem.playError();
                 
-                // Destroy with visual effect
-                this.destroyIngredient(ingredient, index);
-                return;
+                // Create error particles
+                for (let i = 0; i < 3; i++) {
+                    const particle = this.poolManager.get('particle',
+                        ingredient.x + ingredient.data.size / 2,
+                        ingredient.y + ingredient.data.size / 2,
+                        '#FF0000',
+                        '✗',
+                        'default',
+                        {}
+                    );
+                    this.particles.push(particle);
+                }
             }
-            
-            // Correct ingredient - remove without destruction effect
-            ingredient.collected = true;
-            this.ingredients.splice(index, 1);
-            this.poolManager.release('ingredient', ingredient);
-        }
-        
-        /**
-         * Destroy an ingredient with visual effects
-         * @param {Ingredient} ingredient - The ingredient to destroy
-         * @param {number} index - Index in the ingredients array
-         */
-        destroyIngredient(ingredient, index) {
-            const centerX = ingredient.x + ingredient.data.size / 2;
-            const centerY = ingredient.y + ingredient.data.size / 2;
-            
-            // Create explosion particles
-            const particleCount = 8; // Balanced for performance
-            const angleStep = (Math.PI * 2) / particleCount;
-            
-            for (let i = 0; i < particleCount; i++) {
-                const angle = i * angleStep;
-                const speed = 3 + Math.random() * 3;
-                const particle = this.poolManager.get('particle',
-                    centerX,
-                    centerY,
-                    ingredient.data.color || ingredient.getColor(),
-                    '',
-                    'circle',
-                    {
-                        vx: Math.cos(angle) * speed,
-                        vy: Math.sin(angle) * speed,
-                        size: 3 + Math.random() * 3,
-                        gravity: 0.2,
-                        decay: 0.02,
-                        bounce: 0.5
-                    }
-                );
-                this.particles.push(particle);
-            }
-            
-            // Create emoji fragments (just a few for performance)
-            for (let i = 0; i < 3; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const speed = 2 + Math.random() * 4;
-                const fragment = this.poolManager.get('particle',
-                    centerX + (Math.random() - 0.5) * 10,
-                    centerY + (Math.random() - 0.5) * 10,
-                    ingredient.data.color || '#FFD700',
-                    ingredient.data.emoji,
-                    'default',
-                    {
-                        vx: Math.cos(angle) * speed,
-                        vy: Math.sin(angle) * speed - 2,
-                        size: ingredient.data.size * 0.3,
-                        gravity: 0.3,
-                        decay: 0.025,
-                        rotationSpeed: (Math.random() - 0.5) * 0.4
-                    }
-                );
-                this.particles.push(fragment);
-            }
-            
-            // Add screen ripple effect at destruction point
-            this.renderer.startRippleEffect(centerX, centerY, 40);
-            
-            // Play destruction sound (error sound already played for wrong ingredients)
             
             // Remove ingredient
             ingredient.collected = true;
@@ -6142,11 +6134,11 @@ var Game = (function () {
             const timeBonus = Math.floor(order.timeLeft / 1000);
             
             // Combo multiplier
-            const comboMultiplier = this.state.core.combo;
+            const comboMultiplier = this.state.combo;
             
-            // Power-up multiplier - fixed to use correct state path
-            const scoreMultiplier = this.state.powerUps?.scoreMultiplier;
-            const powerUpMultiplier = (scoreMultiplier?.active && scoreMultiplier?.multiplier) || 1;
+            // Power-up multiplier
+            const powerUpMultiplier = this.state.activePowerUps.scoreMultiplier.active ? 
+                this.state.activePowerUps.scoreMultiplier.multiplier : 1;
             
             return Math.floor((basePoints + timeBonus) * comboMultiplier * powerUpMultiplier);
         }
@@ -6160,9 +6152,9 @@ var Game = (function () {
             this.state.incrementCombo(5);
             
             // Bonus points
-            const bonusPoints = Math.floor(100 * this.state.core.combo * 
-                (this.state.powerUps.scoreMultiplier.active ? 2 : 1));
-            this.state.updateScore(bonusPoints);
+            const bonusPoints = Math.floor(100 * this.state.combo * 
+                (this.state.activePowerUps.scoreMultiplier.active ? 2 : 1));
+            this.state.addScore(bonusPoints);
             
             // Play success sound
             this.audioSystem.playOrderComplete();
@@ -6245,16 +6237,6 @@ var Game = (function () {
                 }
             });
             
-            // If no orders, spawn random ingredients to keep game active
-            if (possibleTypes.size === 0) {
-                const ingredientTypes = Ingredient.getAvailableTypes();
-                // Add 2-3 random ingredient types
-                for (let i = 0; i < Math.floor(Math.random() * 2) + 2; i++) {
-                    const randomType = ingredientTypes[Math.floor(Math.random() * ingredientTypes.length)];
-                    possibleTypes.add(randomType);
-                }
-            }
-            
             if (possibleTypes.size > 0) {
                 const typesArray = Array.from(possibleTypes);
                 const type = typesArray[Math.floor(Math.random() * typesArray.length)];
@@ -6266,7 +6248,7 @@ var Game = (function () {
                 });
                 
                 // Apply current speed with difficulty scaling
-                const difficultyMultiplier = 1 + (this.state.core.score * this.config.difficultyIncreaseRate);
+                const difficultyMultiplier = 1 + (this.state.score * this.config.difficultyIncreaseRate);
                 ingredient.speed *= difficultyMultiplier;
                 ingredient.baseSpeed *= difficultyMultiplier;
                 
@@ -6302,8 +6284,7 @@ var Game = (function () {
          * @param {number} deltaTime - Time since last update in milliseconds
          */
         update(deltaTime) {
-            try {
-                if (this.gameState !== 'playing' || this.isPaused) return;
+            if (this.state.gameState !== 'playing' || this.isPaused) return;
             
             this.frameCount++;
             
@@ -6312,7 +6293,7 @@ var Game = (function () {
             
             // Update color theme
             if (this.renderer.updateColorTheme) {
-                this.renderer.updateColorTheme(this.state.core.combo, this.state.core.score, this.frameCount);
+                this.renderer.updateColorTheme(this.state.combo, this.state.score, this.frameCount);
             }
             
             // Spawn entities
@@ -6332,8 +6313,7 @@ var Game = (function () {
             // Update ingredients
             for (let i = this.ingredients.length - 1; i >= 0; i--) {
                 const ingredient = this.ingredients[i];
-                // Pass deltaTime so ingredient physics stay consistent
-                ingredient.update(this.frameCount, this.state, deltaTime);
+                ingredient.update(this.frameCount, this.state.activePowerUps);
                 
                 // Remove if off screen
                 if (ingredient.y > this.canvas.height + 50) {
@@ -6345,17 +6325,15 @@ var Game = (function () {
             // Update orders
             for (let i = this.orders.length - 1; i >= 0; i--) {
                 const order = this.orders[i];
-                if (!order.update(deltaTime, this.state.powerUps)) {
+                if (!order.update(deltaTime, this.state.activePowerUps)) {
                     // Order expired
                     this.orders.splice(i, 1);
                     this.state.loseLife();
-                    if (typeof this.audioSystem.playOrderExpired === 'function') {
-                        this.audioSystem.playOrderExpired();
-                    }
+                    this.audioSystem.playOrderExpire();
                     this.renderer.startScreenShake(20, 30);
                     
                     // Check game over
-                    if (this.state.core.lives <= 0) {
+                    if (this.state.lives <= 0) {
                         this.gameOver();
                     }
                 }
@@ -6393,22 +6371,17 @@ var Game = (function () {
             
             // Update UI
             this.updateUI();
-            } catch (error) {
-                console.error('Update error:', error);
-                throw error; // Re-throw to be caught by game loop
-            }
         }
         
         /**
          * Render game state
          */
         render() {
-            try {
-                // Clear canvas
-                this.renderer.clear(this.canvas.width, this.canvas.height);
+            // Clear canvas
+            this.renderer.clear(this.canvas.width, this.canvas.height);
             
-            // Screen shake is applied via updateScreenShake
-            // (legacy applyScreenShake call removed)
+            // Apply screen shake
+            this.renderer.applyScreenShake();
             
             // Draw background
             this.renderer.drawBackground(this.canvas.width, this.canvas.height);
@@ -6433,22 +6406,11 @@ var Game = (function () {
                 particle.draw(this.ctx, this.frameCount);
             });
             
-
-            // Draw overlay effects like flashes and ripples
-            this.renderer.drawScreenEffects();
+            // Apply screen flash
+            this.renderer.applyScreenFlash(this.canvas.width, this.canvas.height);
             
             // Reset transform
             this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-            } catch (error) {
-                console.error('Render error:', error);
-                // Try to clear canvas to prevent visual artifacts
-                try {
-                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                } catch (clearError) {
-                    console.error('Failed to clear canvas:', clearError);
-                }
-                throw error; // Re-throw to be caught by game loop
-            }
         }
         
         /**
@@ -6456,34 +6418,29 @@ var Game = (function () {
          * @param {number} currentTime - Current timestamp
          */
         gameLoop(currentTime) {
-            try {
-                if (!this.lastTime) {
-                    this.lastTime = currentTime;
-                }
-                
-                // Update performance monitoring
-                this.performanceMonitor.update(currentTime);
-                
-                this.deltaTime = currentTime - this.lastTime;
+            if (!this.lastTime) {
                 this.lastTime = currentTime;
-                this.frameCount++;
-                
-                this.update(this.deltaTime);
-                this.render();
-                
-                // Update performance UI
-                this.performanceUI.update(currentTime, {
-                    particles: this.particles,
-                    ingredients: this.ingredients,
-                    powerUps: this.powerUps,
-                    renderer: this.renderer
-                });
-                
-                this.animationId = requestAnimationFrame((time) => this.gameLoop(time));
-            } catch (error) {
-                console.error('Game loop error:', error);
-                this.handleGameError(error);
             }
+            
+            // Update performance monitoring
+            this.performanceMonitor.update(currentTime);
+            
+            this.deltaTime = currentTime - this.lastTime;
+            this.lastTime = currentTime;
+            this.frameCount++;
+            
+            this.update(this.deltaTime);
+            this.render();
+            
+            // Update performance UI
+            this.performanceUI.update(currentTime, {
+                particles: this.particles,
+                ingredients: this.ingredients,
+                powerUps: this.powerUps,
+                renderer: this.renderer
+            });
+            
+            this.animationId = requestAnimationFrame((time) => this.gameLoop(time));
         }
         
         /**
@@ -6493,7 +6450,7 @@ var Game = (function () {
             // Update score
             const scoreElement = document.getElementById('score');
             if (scoreElement) {
-                scoreElement.textContent = `Score: ${this.state.core.score}`;
+                scoreElement.textContent = `Score: ${this.state.score}`;
                 if (this.state.scoreChanged) {
                     scoreElement.classList.add('bounce');
                     setTimeout(() => scoreElement.classList.remove('bounce'), 400);
@@ -6504,7 +6461,7 @@ var Game = (function () {
             // Update combo
             const comboElement = document.getElementById('combo');
             if (comboElement) {
-                comboElement.textContent = `Combo: x${this.state.core.combo}`;
+                comboElement.textContent = `Combo: x${this.state.combo}`;
                 if (this.state.comboChanged) {
                     comboElement.classList.add('pulse');
                     setTimeout(() => comboElement.classList.remove('pulse'), 300);
@@ -6515,7 +6472,7 @@ var Game = (function () {
             // Update lives
             const livesElement = document.getElementById('lives');
             if (livesElement) {
-                livesElement.textContent = '❤️'.repeat(this.state.core.lives);
+                livesElement.textContent = '❤️'.repeat(this.state.lives);
                 if (this.state.livesChanged) {
                     livesElement.classList.add('shake');
                     setTimeout(() => livesElement.classList.remove('shake'), 500);
@@ -6526,31 +6483,19 @@ var Game = (function () {
             // Update power-up status
             const powerUpStatus = document.getElementById('powerUpStatus');
             if (powerUpStatus) {
-                // Clear children safely
-                while (powerUpStatus.firstChild) {
-                    powerUpStatus.removeChild(powerUpStatus.firstChild);
-                }
+                powerUpStatus.innerHTML = '';
                 
-                for (const [type, powerUp] of Object.entries(this.state.powerUps)) {
+                for (const [type, powerUp] of Object.entries(this.state.activePowerUps)) {
                     if (powerUp.active) {
                         const indicator = document.createElement('div');
                         indicator.className = `power-up-indicator ${type.toLowerCase().replace(/([A-Z])/g, '-$1').toLowerCase()}`;
                         
                         const powerUpData = PowerUp.getPowerUpTypes()[type];
-                        
-                        // Create elements safely to prevent XSS
-                        const emojiSpan = document.createElement('span');
-                        emojiSpan.textContent = powerUpData.emoji;
-                        indicator.appendChild(emojiSpan);
-                        
-                        const nameSpan = document.createElement('span');
-                        nameSpan.textContent = powerUpData.name;
-                        indicator.appendChild(nameSpan);
-                        
-                        const timerSpan = document.createElement('span');
-                        timerSpan.className = 'power-up-timer';
-                        timerSpan.textContent = `${Math.ceil(powerUp.timeLeft / 1000)}s`;
-                        indicator.appendChild(timerSpan);
+                        indicator.innerHTML = `
+                        <span>${powerUpData.emoji}</span>
+                        <span>${powerUpData.name}</span>
+                        <span class="power-up-timer">${Math.ceil(powerUp.timeLeft / 1000)}s</span>
+                    `;
                         
                         powerUpStatus.appendChild(indicator);
                     }
@@ -6562,22 +6507,15 @@ var Game = (function () {
          * Handle game over
          */
         gameOver() {
-            this.gameState = 'gameOver';
-            this.state.core.running = false;
+            this.state.endGame();
             this.audioSystem.playGameOver();
             
-            // Update high score
-            if (this.state.core.score > this.state.core.highScore) {
-                this.state.core.highScore = this.state.core.score;
-                this.saveHighScore();
-            }
-            
             // Show game over screen
-            const gameOverElement = document.getElementById('gameOverOverlay');
+            const gameOverElement = document.getElementById('gameOver');
             if (gameOverElement) {
                 gameOverElement.style.display = 'block';
-                document.getElementById('finalScore').textContent = `Final Score: ${this.state.core.score}`;
-                document.getElementById('highScore').textContent = `High Score: ${this.state.core.highScore}`;
+                document.getElementById('finalScore').textContent = `Final Score: ${this.state.score}`;
+                document.getElementById('highScore').textContent = `High Score: ${this.state.highScore}`;
             }
         }
         
@@ -6585,15 +6523,13 @@ var Game = (function () {
          * Load high score from localStorage
          */
         loadHighScore() {
-            if (isLocalStorageAvailable()) {
-                try {
-                    const savedScore = localStorage.getItem('burgerDropHighScore');
-                    if (savedScore) {
-                        this.state.core.highScore = parseInt(savedScore) || 0;
-                    }
-                } catch (e) {
-                    console.warn('Could not load high score:', e);
+            try {
+                const savedScore = localStorage.getItem('burgerDropHighScore');
+                if (savedScore) {
+                    this.state.highScore = parseInt(savedScore) || 0;
                 }
+            } catch (e) {
+                console.warn('Could not load high score:', e);
             }
         }
         
@@ -6601,12 +6537,10 @@ var Game = (function () {
          * Save high score to localStorage
          */
         saveHighScore() {
-            if (isLocalStorageAvailable()) {
-                try {
-                    localStorage.setItem('burgerDropHighScore', this.state.core.highScore.toString());
-                } catch (e) {
-                    console.warn('Could not save high score:', e);
-                }
+            try {
+                localStorage.setItem('burgerDropHighScore', this.state.highScore.toString());
+            } catch (e) {
+                console.warn('Could not save high score:', e);
             }
         }
         
@@ -6643,10 +6577,11 @@ var Game = (function () {
             this.frameCount = 0;
             this.lastSpawn = 0;
             this.lastPowerUpSpawn = 0;
-
-            // Set game state
-            this.gameState = 'playing';
-            this.state.core.running = true;
+            
+            // Start background music
+            this.audioSystem.startBackgroundMusic();
+            
+            // Game state is already set to 'playing' by this.state.startGame()
             
             // Start game loop
             this.lastTime = 0;
@@ -6663,8 +6598,7 @@ var Game = (function () {
             }
             
             this.audioSystem.stopBackgroundMusic();
-            this.gameState = 'stopped';
-            this.state.core.running = false;
+            this.state.gameState = 'stopped';
         }
         
         /**

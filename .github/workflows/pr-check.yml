@@ -1,0 +1,185 @@
+name: PR Readiness Check
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check-tests:
+    runs-on: ubuntu-latest
+    name: Verify Test Coverage
+    outputs:
+      coverage-passed: ${{ steps.coverage-check.outputs.passed }}
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+      - name: Check coverage threshold
+        id: coverage-check
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
+            echo "Line coverage: $COVERAGE%"
+            
+            if (( $(echo "$COVERAGE >= 80" | bc -l) )); then
+              echo "passed=true" >> $GITHUB_OUTPUT
+            else
+              echo "passed=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "passed=false" >> $GITHUB_OUTPUT
+          fi
+
+  check-build:
+    runs-on: ubuntu-latest
+    name: Verify Build Process
+    outputs:
+      build-passed: ${{ steps.build-check.outputs.passed }}
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        id: build-check
+        run: |
+          if npm run build; then
+            echo "passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "passed=false" >> $GITHUB_OUTPUT
+          fi
+
+  check-docs:
+    runs-on: ubuntu-latest
+    name: Documentation Check
+    outputs:
+      docs-updated: ${{ steps.docs-check.outputs.updated }}
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if documentation needs updating
+        id: docs-check
+        run: |
+          # Get list of changed files
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }})
+          
+          # Check if any source files changed
+          SOURCE_CHANGED=false
+          for file in $CHANGED_FILES; do
+            if [[ $file == src/* ]] || [[ $file == tests/* ]]; then
+              SOURCE_CHANGED=true
+              break
+            fi
+          done
+          
+          # Check if docs were updated
+          DOCS_UPDATED=false
+          for file in $CHANGED_FILES; do
+            if [[ $file == *.md ]] || [[ $file == docs/* ]]; then
+              DOCS_UPDATED=true
+              break
+            fi
+          done
+          
+          if [ "$SOURCE_CHANGED" = true ] && [ "$DOCS_UPDATED" = false ]; then
+            echo "⚠️ Source files changed but no documentation updated"
+            echo "updated=false" >> $GITHUB_OUTPUT
+          else
+            echo "updated=true" >> $GITHUB_OUTPUT
+          fi
+
+  pr-status:
+    runs-on: ubuntu-latest
+    name: PR Status Summary
+    needs: [check-tests, check-build, check-docs]
+    
+    steps:
+      - name: Generate status report
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const testsPassed = '${{ needs.check-tests.outputs.coverage-passed }}' === 'true';
+            const buildPassed = '${{ needs.check-build.outputs.build-passed }}' === 'true';
+            const docsUpdated = '${{ needs.check-docs.outputs.docs-updated }}' === 'true';
+            
+            const allPassed = testsPassed && buildPassed && docsUpdated;
+            
+            const status = `## PR Readiness Check
+            
+            | Check | Status | Required |
+            |-------|--------|----------|
+            | Test Coverage (≥80%) | ${testsPassed ? '✅ Passed' : '❌ Failed'} | Yes |
+            | Build Process | ${buildPassed ? '✅ Passed' : '❌ Failed'} | Yes |
+            | Documentation | ${docsUpdated ? '✅ Updated' : '⚠️ Review needed'} | When applicable |
+            
+            **Overall Status**: ${allPassed ? '✅ Ready to merge' : '❌ Changes required'}
+            
+            ### Next Steps
+            ${!testsPassed ? '- Increase test coverage to meet 80% threshold\n' : ''}
+            ${!buildPassed ? '- Fix build errors\n' : ''}
+            ${!docsUpdated ? '- Update documentation if source changes affect usage\n' : ''}
+            
+            _This check follows the TDD requirements outlined in CLAUDE.md_`;
+            
+            if (context.eventName === 'pull_request') {
+              // Find existing comment
+              const { data: comments } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+              });
+              
+              const botComment = comments.find(comment => 
+                comment.user.type === 'Bot' && 
+                comment.body.includes('PR Readiness Check')
+              );
+              
+              if (botComment) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: botComment.id,
+                  body: status
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: status
+                });
+              }
+            }
+            
+            // Set workflow status
+            if (!allPassed) {
+              core.setFailed('PR is not ready to merge. See status report above.');
+            }
